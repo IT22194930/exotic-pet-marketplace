@@ -4,8 +4,8 @@ const axios = require("axios");
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 4003;
-const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:4001";
+const PORT = process.env.PORT || 8003;
+const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 
 app.get("/health", (req, res) => {
   res.json({ service: "order-service", status: "ok" });

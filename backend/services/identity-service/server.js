@@ -5,7 +5,7 @@ const bcrypt = require("bcryptjs");
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 8001;
 
 // ⚠️ For now hardcode secret (later we move to env var)
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-later";
