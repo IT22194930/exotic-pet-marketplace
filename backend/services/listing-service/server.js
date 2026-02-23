@@ -30,9 +30,19 @@ async function getUserFromToken(authHeader) {
 
 // ✅ Create listing (SELLER ONLY)
 app.post("/listings", async (req, res) => {
+  // Isolate identity/auth check so its failures always return 401
+  let user;
   try {
-    const user = await getUserFromToken(req.headers.authorization);
+    user = await getUserFromToken(req.headers.authorization);
+  } catch (err) {
+    return res.status(401).json({
+      error: "Token invalid or Identity service unreachable",
+      details: err.response?.data || err.message
+    });
+  }
 
+  // Business logic errors are unrelated to auth and should return 5xx
+  try {
     if (user.role !== "seller") {
       return res.status(403).json({ error: "Only sellers can create listings" });
     }
@@ -56,9 +66,10 @@ app.post("/listings", async (req, res) => {
 
     res.status(201).json({ message: "Listing created", listing });
   } catch (err) {
-    res.status(401).json({
-      error: "Token invalid or Identity service unreachable",
-      details: err.response?.data || err.message
+    console.error("Error creating listing:", err);
+    res.status(500).json({
+      error: "Failed to create listing",
+      details: err.message
     });
   }
 });
