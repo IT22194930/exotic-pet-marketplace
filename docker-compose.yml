@@ -1,0 +1,33 @@
+services:
+  identity-service:
+    build: ./services/identity-service
+    container_name: identity-service
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+
+  listing-service:
+    build: ./services/listing-service
+    container_name: listing-service
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+
+  order-service:
+    build: ./services/order-service
+    container_name: order-service
+    ports:
+      - "4003:4003"
+    environment:
+      - PORT=4003
+      - IDENTITY_URL=http://identity-service:4001
+
+  compliance-service:
+    build: ./services/compliance-service
+    container_name: compliance-service
+    ports:
+      - "4004:4004"
+    environment:
+      - PORT=4004
