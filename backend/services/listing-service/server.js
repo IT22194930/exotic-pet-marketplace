@@ -47,10 +47,6 @@ app.post("/listings", async (req, res) => {
       return res.status(403).json({ error: "Only sellers can create listings" });
     }
 
-    if (!user.sellerVerified) {
-      return res.status(403).json({ error: "Only verified sellers can create listings" });
-    }
-
     const { species, type, price } = req.body;
     if (!species || !type || price == null) {
       return res.status(400).json({ error: "species, type, price are required" });
