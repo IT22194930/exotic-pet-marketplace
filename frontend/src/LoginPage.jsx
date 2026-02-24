@@ -29,6 +29,7 @@ export default function LoginPage() {
         setError(data.error || "Invalid credentials. Please try again.");
       } else {
         localStorage.setItem("jwt", data.token);
+        window.dispatchEvent(new Event("auth-change"));
         setSuccess("Welcome back! Redirecting…");
         setTimeout(() => navigate("/"), 1200);
       }
