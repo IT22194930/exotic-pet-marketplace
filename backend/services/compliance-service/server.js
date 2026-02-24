@@ -1,11 +1,12 @@
+require("dotenv").config();
 const express = require("express");
 
 // Initialise Supabase (validates env vars at startup)
 require("./config/supabase");
 
 const complianceRoutes = require("./routes/compliance");
-const notifyRoutes    = require("./routes/notify");
-const auditRoutes     = require("./routes/audit");
+const notifyRoutes = require("./routes/notify");
+const auditRoutes = require("./routes/audit");
 
 const app = express();
 app.use(express.json());
@@ -17,8 +18,8 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/compliance", complianceRoutes);
-app.use("/notify",     notifyRoutes);
-app.use("/audit",      auditRoutes);
+app.use("/notify", notifyRoutes);
+app.use("/audit", auditRoutes);
 
 app.listen(PORT, () =>
   console.log(`compliance-service running on port ${PORT}`),
