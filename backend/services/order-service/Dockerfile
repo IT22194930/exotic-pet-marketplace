@@ -8,4 +8,4 @@ RUN npm ci --omit=dev
 COPY . .
 
 EXPOSE 8003
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const multer = require("multer");
@@ -22,7 +23,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 // Multer in-memory upload
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
 app.get("/health", (req, res) => {
@@ -36,7 +37,7 @@ async function getUserFromToken(authHeader) {
   }
 
   const response = await axios.get(`${IDENTITY_URL}/users/me`, {
-    headers: { Authorization: authHeader }
+    headers: { Authorization: authHeader },
   });
 
   return response.data; // {id, email, role, sellerVerified}
@@ -47,32 +48,46 @@ app.post("/listings", async (req, res) => {
   try {
     const user = await getUserFromToken(req.headers.authorization);
     if (user.role !== "seller") {
-      return res.status(403).json({ error: "Only sellers can create listings" });
+      return res
+        .status(403)
+        .json({ error: "Only sellers can create listings" });
     }
 
     const { title, species, type, price } = req.body;
     if (!title || !species || !type || price == null) {
-      return res.status(400).json({ error: "title, species, type, price are required" });
+      return res
+        .status(400)
+        .json({ error: "title, species, type, price are required" });
     }
 
     const { data, error } = await supabase
       .from("listings")
-      .insert([{
-        seller_id: user.id,
-        title,
-        species,
-        type,
-        price: Number(price),
-        status: "available"
-      }])
+      .insert([
+        {
+          seller_id: user.id,
+          title,
+          species,
+          type,
+          price: Number(price),
+          status: "available",
+        },
+      ])
       .select("*")
       .single();
 
-    if (error) return res.status(500).json({ error: "DB error", details: error.message });
+    if (error)
+      return res
+        .status(500)
+        .json({ error: "DB error", details: error.message });
 
     res.status(201).json({ message: "Listing created", listing: data });
   } catch (err) {
-    res.status(401).json({ error: "Unauthorized", details: err.response?.data || err.message });
+    res
+      .status(401)
+      .json({
+        error: "Unauthorized",
+        details: err.response?.data || err.message,
+      });
   }
 });
 
@@ -93,10 +108,15 @@ app.post("/listings/:id/image", upload.single("image"), async (req, res) => {
       .eq("id", listingId)
       .single();
 
-    if (findErr || !listing) return res.status(404).json({ error: "Listing not found" });
-    if (listing.seller_id !== user.id) return res.status(403).json({ error: "Not your listing" });
+    if (findErr || !listing)
+      return res.status(404).json({ error: "Listing not found" });
+    if (listing.seller_id !== user.id)
+      return res.status(403).json({ error: "Not your listing" });
 
-    if (!req.file) return res.status(400).json({ error: "No image uploaded. Use form-data key 'image'." });
+    if (!req.file)
+      return res
+        .status(400)
+        .json({ error: "No image uploaded. Use form-data key 'image'." });
 
     // Build a unique path inside the bucket
     const safeName = (req.file.originalname || "image").replace(/\s+/g, "_");
@@ -107,13 +127,18 @@ app.post("/listings/:id/image", upload.single("image"), async (req, res) => {
       .from(SUPABASE_BUCKET)
       .upload(filePath, req.file.buffer, {
         contentType: req.file.mimetype,
-        upsert: false
+        upsert: false,
       });
 
-    if (uploadErr) return res.status(500).json({ error: "Storage upload failed", details: uploadErr.message });
+    if (uploadErr)
+      return res
+        .status(500)
+        .json({ error: "Storage upload failed", details: uploadErr.message });
 
     // Public URL (works because bucket is public)
-    const { data: pub } = supabase.storage.from(SUPABASE_BUCKET).getPublicUrl(filePath);
+    const { data: pub } = supabase.storage
+      .from(SUPABASE_BUCKET)
+      .getPublicUrl(filePath);
     const imageUrl = pub.publicUrl;
 
     // Save URL in DB
@@ -124,11 +149,19 @@ app.post("/listings/:id/image", upload.single("image"), async (req, res) => {
       .select("*")
       .single();
 
-    if (updErr) return res.status(500).json({ error: "DB update failed", details: updErr.message });
+    if (updErr)
+      return res
+        .status(500)
+        .json({ error: "DB update failed", details: updErr.message });
 
     res.json({ message: "Image uploaded", imageUrl, listing: updated });
   } catch (err) {
-    res.status(401).json({ error: "Unauthorized", details: err.response?.data || err.message });
+    res
+      .status(401)
+      .json({
+        error: "Unauthorized",
+        details: err.response?.data || err.message,
+      });
   }
 });
 
@@ -140,7 +173,8 @@ app.get("/listings/:id", async (req, res) => {
     .eq("id", req.params.id)
     .single();
 
-  if (error || !data) return res.status(404).json({ error: "Listing not found" });
+  if (error || !data)
+    return res.status(404).json({ error: "Listing not found" });
   res.json(data);
 });
 
@@ -151,7 +185,8 @@ app.get("/listings", async (req, res) => {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) return res.status(500).json({ error: "DB error", details: error.message });
+  if (error)
+    return res.status(500).json({ error: "DB error", details: error.message });
   res.json({ count: data.length, listings: data });
 });
 

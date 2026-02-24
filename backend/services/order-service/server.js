@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 
@@ -18,7 +19,7 @@ async function getUserFromToken(authHeader) {
   }
 
   const response = await axios.get(`${IDENTITY_URL}/users/me`, {
-    headers: { Authorization: authHeader }
+    headers: { Authorization: authHeader },
   });
 
   return response.data; // {id, email, role, sellerVerified}
@@ -32,7 +33,7 @@ app.get("/orders/whoami", async (req, res) => {
   } catch (err) {
     res.status(401).json({
       error: "Token invalid or Identity service unreachable",
-      details: err.response?.data || err.message
+      details: err.response?.data || err.message,
     });
   }
 });

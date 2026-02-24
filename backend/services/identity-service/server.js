@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -7,7 +8,8 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 8001;
-const JWT_SECRET = process.env.JWT_SECRET || "CN4vbU9nRdi1ubOq5a1IYcw5WBvi7FfTz8iqC8ojWGA";
+const JWT_SECRET =
+  process.env.JWT_SECRET || "CN4vbU9nRdi1ubOq5a1IYcw5WBvi7FfTz8iqC8ojWGA";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -23,14 +25,16 @@ function generateToken(user) {
   return jwt.sign(
     { id: user.id, role: user.role, email: user.email },
     JWT_SECRET,
-    { expiresIn: "2h" }
+    { expiresIn: "2h" },
   );
 }
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Missing or invalid Authorization header" });
+    return res
+      .status(401)
+      .json({ error: "Missing or invalid Authorization header" });
   }
   const token = authHeader.split(" ")[1];
 
@@ -52,7 +56,9 @@ app.post("/auth/register", async (req, res) => {
   const { email, password, role } = req.body;
 
   if (!email || !password || !role) {
-    return res.status(400).json({ error: "email, password, role are required" });
+    return res
+      .status(400)
+      .json({ error: "email, password, role are required" });
   }
   if (!["buyer", "seller", "admin"].includes(role)) {
     return res.status(400).json({ error: "role must be buyer/seller/admin" });
@@ -63,7 +69,14 @@ app.post("/auth/register", async (req, res) => {
   // Insert user
   const { data, error } = await supabase
     .from("users")
-    .insert([{ email, password_hash: passwordHash, role, seller_verified: role === "seller" ? false : false }])
+    .insert([
+      {
+        email,
+        password_hash: passwordHash,
+        role,
+        seller_verified: role === "seller" ? false : false,
+      },
+    ])
     .select("id,email,role,seller_verified")
     .single();
 
@@ -71,7 +84,9 @@ app.post("/auth/register", async (req, res) => {
     if (error.message?.toLowerCase().includes("duplicate")) {
       return res.status(409).json({ error: "User already exists" });
     }
-    return res.status(500).json({ error: "Database error", details: error.message });
+    return res
+      .status(500)
+      .json({ error: "Database error", details: error.message });
   }
 
   res.status(201).json({
@@ -80,8 +95,8 @@ app.post("/auth/register", async (req, res) => {
       id: data.id,
       email: data.email,
       role: data.role,
-      sellerVerified: data.seller_verified
-    }
+      sellerVerified: data.seller_verified,
+    },
   });
 });
 
@@ -95,7 +110,8 @@ app.post("/auth/login", async (req, res) => {
     .eq("email", email)
     .single();
 
-  if (error || !user) return res.status(401).json({ error: "Invalid credentials" });
+  if (error || !user)
+    return res.status(401).json({ error: "Invalid credentials" });
 
   const ok = await bcrypt.compare(password, user.password_hash);
   if (!ok) return res.status(401).json({ error: "Invalid credentials" });
@@ -109,8 +125,8 @@ app.post("/auth/login", async (req, res) => {
       id: user.id,
       email: user.email,
       role: user.role,
-      sellerVerified: user.seller_verified
-    }
+      sellerVerified: user.seller_verified,
+    },
   });
 });
 
@@ -128,7 +144,7 @@ app.get("/users/me", authMiddleware, async (req, res) => {
     id: user.id,
     email: user.email,
     role: user.role,
-    sellerVerified: user.seller_verified
+    sellerVerified: user.seller_verified,
   });
 });
 
@@ -145,15 +161,16 @@ app.patch("/sellers/:id/verify", authMiddleware, async (req, res) => {
     .select("id,email,role,seller_verified")
     .single();
 
-  if (error || !updated) return res.status(404).json({ error: "Seller not found" });
+  if (error || !updated)
+    return res.status(404).json({ error: "Seller not found" });
 
   res.json({
     message: "Seller verified",
     seller: {
       id: updated.id,
       email: updated.email,
-      sellerVerified: updated.seller_verified
-    }
+      sellerVerified: updated.seller_verified,
+    },
   });
 });
 
