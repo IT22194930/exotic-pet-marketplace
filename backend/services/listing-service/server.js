@@ -3,9 +3,11 @@ const express = require("express");
 const axios = require("axios");
 const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const PORT = process.env.PORT || 8002;
 const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
