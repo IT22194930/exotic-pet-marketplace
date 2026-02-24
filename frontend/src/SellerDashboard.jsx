@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getAuthUser } from "./utils/auth";
+import PetCard from "./PetCard";
 
 const LISTING_URL = import.meta.env.VITE_LISTING_SERVICE_URL;
 
@@ -9,7 +10,7 @@ const STATUS_COLORS = {
   pending:   "bg-amber-500/15 text-amber-400 border-amber-500/30",
 };
 
-const EMPTY_FORM = { title: "", species: "", type: "sale", price: "" };
+const EMPTY_FORM = { title: "", species: "", type: "exotic", price: "" };
 
 export default function SellerDashboard() {
   const [listings, setListings]   = useState([]);
@@ -20,6 +21,7 @@ export default function SellerDashboard() {
   const [saving, setSaving]       = useState(false);
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
+  const [view, setView]           = useState("table"); // "table" | "grid"
 
   const me = getAuthUser(); // { id, email, role }
   const token = localStorage.getItem("jwt");
@@ -65,7 +67,7 @@ export default function SellerDashboard() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create listing");
+      if (!res.ok) throw new Error(data.details || data.error || "Failed to create listing");
       setFormSuccess("Listing created!");
       setForm(EMPTY_FORM);
       await loadListings();
@@ -96,12 +98,48 @@ export default function SellerDashboard() {
             Logged in as <span className="text-slate-200 font-medium">{me?.email}</span>
           </p>
         </div>
-        <button
-          onClick={openModal}
-          className="self-start sm:self-auto inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_16px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 hover:shadow-[0_6px_24px_rgba(16,185,129,0.45)] transition-all duration-200"
-        >
-          + New Listing
-        </button>
+        <div className="flex items-center gap-3">
+          {/* View toggle */}
+          <div className="flex items-center rounded-lg border border-white/10 bg-white/[0.03] p-1 gap-1">
+            <button
+              onClick={() => setView("table")}
+              title="Detail view"
+              className={`p-2 rounded-md transition-all duration-200 ${
+                view === "table"
+                  ? "bg-emerald-500/20 text-emerald-400"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              {/* List icon */}
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setView("grid")}
+              title="Grid view"
+              className={`p-2 rounded-md transition-all duration-200 ${
+                view === "grid"
+                  ? "bg-emerald-500/20 text-emerald-400"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              {/* Grid icon */}
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+              </svg>
+            </button>
+          </div>
+
+          <button
+            onClick={openModal}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_16px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 hover:shadow-[0_6px_24px_rgba(16,185,129,0.45)] transition-all duration-200"
+          >
+            + New Listing
+          </button>
+        </div>
       </div>
 
       {/* Stats row */}
@@ -126,25 +164,40 @@ export default function SellerDashboard() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="max-w-6xl mx-auto rounded-2xl border border-white/[0.07] bg-[#0f1a2e]/80 backdrop-blur overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-slate-400 gap-3">
-            <span className="w-5 h-5 rounded-full border-2 border-slate-600 border-t-emerald-400 animate-spin inline-block" />
-            Loading listings…
-          </div>
-        ) : (
+      {/* Listings — Table or Grid */}
+      {loading ? (
+        <div className="max-w-6xl mx-auto flex items-center justify-center py-24 text-slate-400 gap-3">
+          <span className="w-5 h-5 rounded-full border-2 border-slate-600 border-t-emerald-400 animate-spin inline-block" />
+          Loading listings…
+        </div>
+      ) : view === "grid" ? (
+        /* ── Grid view ── */
+        <div className="max-w-6xl mx-auto">
+          {listings.length === 0 ? (
+            <div className="py-20 text-center text-slate-500">
+              No listings yet.{" "}
+              <button onClick={openModal} className="text-emerald-400 hover:text-emerald-300 underline">Create your first listing →</button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {listings.map((l) => <PetCard key={l.id} listing={l} />)}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ── Table / Detail view ── */
+        <div className="max-w-6xl mx-auto rounded-2xl border border-white/[0.07] bg-[#0f1a2e]/80 backdrop-blur overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.07] text-[0.72rem] uppercase tracking-widest text-slate-500">
+                  <th className="text-left px-6 py-4">Image</th>
                   <th className="text-left px-6 py-4">Title</th>
                   <th className="text-left px-6 py-4">Species</th>
                   <th className="text-left px-6 py-4">Type</th>
                   <th className="text-left px-6 py-4">Price</th>
                   <th className="text-left px-6 py-4">Status</th>
                   <th className="text-left px-6 py-4">Created</th>
-                  <th className="text-left px-6 py-4">Image</th>
                 </tr>
               </thead>
               <tbody>
@@ -160,6 +213,16 @@ export default function SellerDashboard() {
                 )}
                 {listings.map((l) => (
                   <tr key={l.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                    <td className="px-4 py-3">
+                      {l.image_url ? (
+                        <a href={l.image_url} target="_blank" rel="noreferrer">
+                          <img src={l.image_url} alt={l.title}
+                            className="w-12 h-12 rounded-lg object-cover border border-white/10 hover:scale-105 transition-transform" />
+                        </a>
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-slate-600 text-lg">🐾</div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 font-semibold text-slate-100">{l.title}</td>
                     <td className="px-6 py-4 text-slate-300">{l.species}</td>
                     <td className="px-6 py-4 text-slate-400 capitalize">{l.type}</td>
@@ -172,19 +235,13 @@ export default function SellerDashboard() {
                     <td className="px-6 py-4 text-slate-500 text-xs">
                       {l.created_at ? new Date(l.created_at).toLocaleDateString() : "—"}
                     </td>
-                    <td className="px-6 py-4">
-                      {l.image_url
-                        ? <a href={l.image_url} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline text-xs">View</a>
-                        : <span className="text-slate-600 text-xs">None</span>
-                      }
-                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Create modal */}
       {showModal && (
@@ -208,8 +265,8 @@ export default function SellerDashboard() {
               <div>
                 <label className={labelClass}>Type</label>
                 <select name="type" value={form.type} onChange={handleChange} className={`${inputClass} cursor-pointer`}>
-                  {["sale", "adoption", "trade"].map(t => (
-                    <option key={t} value={t} className="bg-[#1a2540] capitalize">{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                  {[["exotic","Exotic"],["livestock","Livestock"]].map(([val, label]) => (
+                    <option key={val} value={val} className="bg-[#1a2540]">{label}</option>
                   ))}
                 </select>
               </div>
