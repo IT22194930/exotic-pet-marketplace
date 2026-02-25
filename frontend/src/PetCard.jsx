@@ -6,8 +6,17 @@ const STATUS_COLORS = {
   pending:   "bg-amber-500/15  text-amber-400  border-amber-500/30",
 };
 
-export default function PetCard({ listing }) {
-  const { title, species, type, price, status, image_url, created_at } = listing;
+export default function PetCard({ listing, onPurchase }) {
+  const { id, title, species, type, price, status, image_url, created_at } = listing;
+
+  const [purchasing, setPurchasing] = React.useState(false);
+
+  const handleBuyClick = async () => {
+    if (!onPurchase) return;
+    setPurchasing(true);
+    await onPurchase(id);
+    setPurchasing(false);
+  };
 
   return (
     <div className="group flex flex-col bg-[#0f1a2e]/80 backdrop-blur border border-white/[0.07] rounded-2xl overflow-hidden hover:-translate-y-1.5 hover:border-emerald-500/30 hover:shadow-[0_20px_48px_rgba(16,185,129,0.12)] transition-all duration-300">
@@ -49,14 +58,26 @@ export default function PetCard({ listing }) {
         </p>
 
         {/* Footer row */}
-        <div className="mt-auto flex items-center justify-between">
-          <span className="text-lg font-extrabold text-emerald-400 font-serif">
-            ${Number(price).toLocaleString()}
-          </span>
-          {created_at && (
-            <span className="text-[0.7rem] text-slate-600">
-              {new Date(created_at).toLocaleDateString()}
+        <div className="mt-auto flex items-end justify-between gap-3">
+          <div>
+            <span className="text-lg font-extrabold text-emerald-400 font-serif block leading-none">
+              ${Number(price).toLocaleString()}
             </span>
+            {created_at && (
+              <span className="text-[0.65rem] text-slate-500 font-medium">
+                {new Date(created_at).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+
+          {onPurchase && status === "available" && (
+            <button
+              onClick={handleBuyClick}
+              disabled={purchasing}
+              className="px-4 py-2 text-xs font-bold text-white rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-500 border border-emerald-500/30 hover:shadow-[0_4px_16px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:transform-none"
+            >
+              {purchasing ? "Processing…" : "Purchase"}
+            </button>
           )}
         </div>
       </div>
