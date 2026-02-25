@@ -1,12 +1,12 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import HomePage from "./HomePage";
-import RegisterPage from "./RegisterPage";
-import LoginPage from "./LoginPage";
-import ShopPage from "./ShopPage";
-import BuyerDashboard from "./BuyerDashboard";
-import SellerDashboard from "./SellerDashboard";
-import AdminDashboard from "./AdminDashboard";
+import HomePage        from "./pages/HomePage";
+import RegisterPage    from "./pages/RegisterPage";
+import LoginPage       from "./pages/LoginPage";
+import ShopPage        from "./pages/ShopPage";
+import BuyerDashboard  from "./pages/buyer/BuyerDashboard";
+import SellerDashboard from "./pages/seller/SellerDashboard";
+import AdminDashboard  from "./pages/admin/AdminDashboard";
 
 export default function Router() {
   return (

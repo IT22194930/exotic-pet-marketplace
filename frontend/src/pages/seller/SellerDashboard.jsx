@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { getAuthUser } from "./utils/auth";
-import PetCard from "./PetCard";
-import UploadImage from "./components/UploadImage";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { getAuthUser } from "../../utils/auth";
+import PetCard from "../../components/PetCard";
+import UploadImage from "../../components/UploadImage";
 
 const LISTING_URL = import.meta.env.VITE_LISTING_SERVICE_URL;
 
