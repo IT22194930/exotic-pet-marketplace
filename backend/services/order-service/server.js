@@ -107,6 +107,18 @@ app.post("/orders", async (req, res) => {
 
     if (error) return res.status(500).json({ error: "DB error", details: error.message });
 
+    // 5) Mark listing as "sold" when order is accepted
+    if (status === "created") {
+      const { error: listingUpdateErr } = await supabase
+        .from("listings")
+        .update({ status: "sold" })
+        .eq("id", listingId);
+
+      if (listingUpdateErr) {
+        console.error("Warning: order created but failed to mark listing as sold:", listingUpdateErr.message);
+      }
+    }
+
     return res.status(201).json({
       message: status === "created" ? "Order created" : "Order rejected",
       order,
