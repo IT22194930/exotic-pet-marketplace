@@ -1,9 +1,11 @@
 const express = require("express");
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const PORT = process.env.PORT || 8003;
 
@@ -119,19 +121,7 @@ app.post("/orders", async (req, res) => {
   }
 });
 
-// ✅ Get order by id
-app.get("/orders/:id", async (req, res) => {
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("id", req.params.id)
-    .single();
-
-  if (error || !data) return res.status(404).json({ error: "Order not found" });
-  res.json(data);
-});
-
-// ✅ Get my orders (requires JWT)
+// ✅ Get my orders (requires JWT) — must be BEFORE /orders/:id or Express matches "my" as :id
 app.get("/orders/my", async (req, res) => {
   const authHeader = req.headers.authorization;
 
@@ -150,6 +140,18 @@ app.get("/orders/my", async (req, res) => {
   } catch (err) {
     res.status(401).json({ error: "Unauthorized", details: err.response?.data || err.message });
   }
+});
+
+// ✅ Get order by id
+app.get("/orders/:id", async (req, res) => {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", req.params.id)
+    .single();
+
+  if (error || !data) return res.status(404).json({ error: "Order not found" });
+  res.json(data);
 });
 
 app.listen(PORT, () => console.log(`order-service running on port ${PORT}`));

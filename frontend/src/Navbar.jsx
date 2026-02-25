@@ -31,8 +31,14 @@ export default function Navbar() {
   }, [navigate]);
 
   const dashboardPath =
+    role === "buyer"  ? "/buyer/dashboard"  :
     role === "seller" ? "/seller/dashboard" :
     role === "admin"  ? "/admin/dashboard"  : null;
+
+  const dashboardLabel =
+    role === "admin"  ? "⚙️ Admin Dashboard" :
+    role === "seller" ? "📦 Seller Dashboard" :
+    role === "buyer"  ? "🛍️ My Orders" : "";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-10 h-16 bg-[#080c18]/90 backdrop-blur-xl border-b border-white/[0.07] shadow-[0_2px_24px_rgba(0,0,0,0.4)]">
@@ -60,13 +66,13 @@ export default function Navbar() {
       <div className="flex items-center gap-3">
         {loggedIn ? (
           <>
-            {/* Dashboard button — only for seller / admin */}
+            {/* Dashboard button — all roles */}
             {dashboardPath && (
               <Link
                 to={dashboardPath}
                 className="px-5 py-2 text-sm font-semibold text-white rounded-lg bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_16px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 hover:shadow-[0_6px_28px_rgba(16,185,129,0.45)] transition-all duration-200 no-underline"
               >
-                {role === "admin" ? "⚙️ Admin Dashboard" : "📦 Seller Dashboard"}
+                {dashboardLabel}
               </Link>
             )}
 

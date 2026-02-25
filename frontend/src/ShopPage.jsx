@@ -3,6 +3,8 @@ import PetCard from "./PetCard";
 
 const LISTING_URL = import.meta.env.VITE_LISTING_SERVICE_URL;
 
+const ORDER_URL   = import.meta.env.VITE_ORDER_SERVICE_URL;
+
 const TYPE_OPTIONS = ["All", "exotic", "livestock"];
 
 export default function ShopPage() {
@@ -12,6 +14,9 @@ export default function ShopPage() {
   const [search, setSearch]     = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [sort, setSort]         = useState("newest");
+
+  // Purchase state
+  const [toast, setToast] = useState(null); // { type: 'success' | 'error', message: string }
 
   useEffect(() => {
     const load = async () => {
@@ -30,6 +35,41 @@ export default function ShopPage() {
     };
     load();
   }, []);
+
+  const handlePurchase = async (listingId) => {
+    const token = localStorage.getItem("jwt");
+    if (!token) {
+      setToast({ type: "error", message: "Please sign in to make a purchase." });
+      return;
+    }
+
+    try {
+      const res = await fetch(`${ORDER_URL}/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ listingId })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.details || data.error || "Purchase failed");
+      }
+
+      setToast({ type: "success", message: `Purchase successful! Order status: ${data.order?.status}` });
+      
+      // Update local listing status so the button disappears
+      setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: "pending" } : l));
+
+    } catch (err) {
+      setToast({ type: "error", message: err.message });
+    }
+
+    // Auto-hide toast after 4s
+    setTimeout(() => setToast(null), 4000);
+  };
 
   /* ── Filter + sort ── */
   const filtered = listings
@@ -123,10 +163,33 @@ export default function ShopPage() {
       ) : (
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filtered.map((l) => (
-            <PetCard key={l.id} listing={l} />
+            <PetCard key={l.id} listing={l} onPurchase={handlePurchase} />
           ))}
         </div>
       )}
+
+      {/* ── Toast Notification ── */}
+      {toast && (
+        <div className="fixed bottom-8 right-8 z-50 animate-bounce-short">
+          <div className={`px-5 py-4 rounded-2xl border shadow-[0_12px_48px_rgba(0,0,0,0.5)] flex items-center gap-3 ${
+            toast.type === "success" 
+              ? "bg-[#064e3b]/90 border-emerald-500/30 text-emerald-100 backdrop-blur" 
+              : "bg-[#7f1d1d]/90 border-red-500/30 text-red-100 backdrop-blur"
+          }`}>
+            <span className="text-xl">{toast.type === "success" ? "✅" : "⚠️"}</span>
+            <span className="text-sm font-medium">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes bounce-short {
+          0% { transform: translateY(20px); opacity: 0; }
+          40% { transform: translateY(-4px); opacity: 1; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
+        .animate-bounce-short { animation: bounce-short 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+      `}</style>
     </div>
   );
 }
