@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { getAuthUser } from "./utils/auth";
+import { useState, useEffect } from "react";
+import { getAuthUser } from "../../utils/auth";
 
 const ORDER_URL = import.meta.env.VITE_ORDER_SERVICE_URL;
 

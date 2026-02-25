@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import PetCard from "./PetCard";
+import { useState, useEffect } from "react";
+import PetCard from "../components/PetCard";
 
 const LISTING_URL = import.meta.env.VITE_LISTING_SERVICE_URL;
 
