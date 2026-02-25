@@ -1,0 +1,526 @@
+{
+  "info": {
+    "name": "Exotic Pet Marketplace",
+    "_postman_id": "exotic-pet-marketplace-v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Full API test suite for all backend microservices.\n\nFlow:\n1. Run 'Register (buyer)' and 'Register (seller)'\n2. Run 'Login (buyer)' → auto-saves {{buyerToken}}\n3. Run 'Login (seller)' → auto-saves {{sellerToken}}\n4. Run 'Login (admin)' → auto-saves {{adminToken}}\n5. Use the saved tokens in all other requests."
+  },
+  "variable": [
+    { "key": "IDENTITY_URL",    "value": "http://localhost:8001" },
+    { "key": "LISTING_URL",     "value": "http://localhost:8002" },
+    { "key": "ORDER_URL",       "value": "http://localhost:8003" },
+    { "key": "COMPLIANCE_URL",  "value": "http://localhost:8004" },
+    { "key": "buyerToken",      "value": "" },
+    { "key": "sellerToken",     "value": "" },
+    { "key": "adminToken",      "value": "" },
+    { "key": "listingId",       "value": "" },
+    { "key": "orderId",         "value": "order-001" }
+  ],
+  "item": [
+
+    {
+      "name": "🔐 Identity Service",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": "{{IDENTITY_URL}}/health"
+          }
+        },
+        {
+          "name": "Register (buyer)",
+          "request": {
+            "method": "POST",
+            "url": "{{IDENTITY_URL}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"liyanage.nadil@gmail.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"buyer\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register (seller)",
+          "request": {
+            "method": "POST",
+            "url": "{{IDENTITY_URL}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"seller@test.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"seller\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register (admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{IDENTITY_URL}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (buyer)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.token) pm.collectionVariables.set('buyerToken', json.token);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{IDENTITY_URL}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"liyanage.nadil@gmail.com\",\n  \"password\": \"Password123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (seller)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.token) pm.collectionVariables.set('sellerToken', json.token);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{IDENTITY_URL}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"seller@test.com\",\n  \"password\": \"Password123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (admin)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.token) pm.collectionVariables.set('adminToken', json.token);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{IDENTITY_URL}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"Password123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Profile (buyer)",
+          "request": {
+            "method": "GET",
+            "url": "{{IDENTITY_URL}}/users/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{buyerToken}}" }]
+          }
+        },
+        {
+          "name": "Get My Profile (seller)",
+          "request": {
+            "method": "GET",
+            "url": "{{IDENTITY_URL}}/users/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{sellerToken}}" }]
+          }
+        },
+        {
+          "name": "Verify Seller (admin) — replace :id",
+          "request": {
+            "method": "PATCH",
+            "url": "{{IDENTITY_URL}}/sellers/:id/verify",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📋 Listing Service",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": "{{LISTING_URL}}/health"
+          }
+        },
+        {
+          "name": "Create Listing (seller)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.listing?.id) pm.collectionVariables.set('listingId', json.listing.id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{LISTING_URL}}/listings",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{sellerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Blue Parrot\",\n  \"species\": \"Parrot\",\n  \"type\": \"bird\",\n  \"price\": 350\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Listing — Restricted Species (seller)",
+          "request": {
+            "method": "POST",
+            "url": "{{LISTING_URL}}/listings",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{sellerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Komodo Dragon\",\n  \"species\": \"Komodo Dragon\",\n  \"type\": \"reptile\",\n  \"price\": 5000\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload Listing Image (seller) — replace :id",
+          "request": {
+            "method": "POST",
+            "url": "{{LISTING_URL}}/listings/{{listingId}}/image",
+            "header": [{ "key": "Authorization", "value": "Bearer {{sellerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "image", "type": "file", "src": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Listings",
+          "request": {
+            "method": "GET",
+            "url": "{{LISTING_URL}}/listings"
+          }
+        },
+        {
+          "name": "Get Single Listing",
+          "request": {
+            "method": "GET",
+            "url": "{{LISTING_URL}}/listings/{{listingId}}"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📦 Order Service",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": "{{ORDER_URL}}/health"
+          }
+        },
+        {
+          "name": "Whoami (validate token)",
+          "request": {
+            "method": "GET",
+            "url": "{{ORDER_URL}}/orders/whoami",
+            "header": [{ "key": "Authorization", "value": "Bearer {{buyerToken}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🛡️ Compliance Service",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": "{{COMPLIANCE_URL}}/health"
+          }
+        },
+
+        {
+          "name": "── Compliance ──",
+          "item": [
+            {
+              "name": "Check — Non-restricted species (buyer)",
+              "request": {
+                "method": "POST",
+                "url": "{{COMPLIANCE_URL}}/compliance/check",
+                "header": [
+                  { "key": "Content-Type",  "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{buyerToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Parrot\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"liyanage.nadil@gmail.com\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Check — Restricted species (buyer) → REJECTED",
+              "request": {
+                "method": "POST",
+                "url": "{{COMPLIANCE_URL}}/compliance/check",
+                "header": [
+                  { "key": "Content-Type",  "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{buyerToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"liyanage.nadil@gmail.com\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Check — Restricted species (admin) → APPROVED",
+              "request": {
+                "method": "POST",
+                "url": "{{COMPLIANCE_URL}}/compliance/check",
+                "header": [
+                  { "key": "Content-Type",  "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"liyanage.nadil@gmail.com\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Check — Missing fields → 400",
+              "request": {
+                "method": "POST",
+                "url": "{{COMPLIANCE_URL}}/compliance/check",
+                "header": [
+                  { "key": "Content-Type",  "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{buyerToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Check — No token → 401",
+              "request": {
+                "method": "POST",
+                "url": "{{COMPLIANCE_URL}}/compliance/check",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Parrot\",\n  \"sellerId\": \"seller-001\"\n}"
+                }
+              }
+            }
+          ]
+        },
+
+        {
+          "name": "── Notifications ──",
+          "item": [
+            {
+              "name": "Notify — Order Confirmed (buyer)",
+              "request": {
+                "method": "POST",
+                "url": "{{COMPLIANCE_URL}}/notify/order-confirmed",
+                "header": [
+                  { "key": "Content-Type",  "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{buyerToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"channel\": \"email\",\n  \"recipient\": \"liyanage.nadil@gmail.com\",\n  \"message\": \"Your order has been confirmed!\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Notify — SMS channel",
+              "request": {
+                "method": "POST",
+                "url": "{{COMPLIANCE_URL}}/notify/order-confirmed",
+                "header": [
+                  { "key": "Content-Type",  "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{buyerToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"channel\": \"sms\",\n  \"recipient\": \"+94771234567\",\n  \"message\": \"Order order-001 confirmed.\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Notify — Missing fields → 400",
+              "request": {
+                "method": "POST",
+                "url": "{{COMPLIANCE_URL}}/notify/order-confirmed",
+                "header": [
+                  { "key": "Content-Type",  "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{buyerToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\"\n}"
+                }
+              }
+            }
+          ]
+        },
+
+        {
+          "name": "── Audit Logs ──",
+          "item": [
+            {
+              "name": "GET logs for order",
+              "request": {
+                "method": "GET",
+                "url": "{{COMPLIANCE_URL}}/audit/orders/{{orderId}}"
+              }
+            },
+            {
+              "name": "GET all logs (default)",
+              "request": {
+                "method": "GET",
+                "url": "{{COMPLIANCE_URL}}/audit/logs"
+              }
+            },
+            {
+              "name": "GET all logs — filter by action",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{COMPLIANCE_URL}}/audit/logs?action=COMPLIANCE_APPROVED",
+                  "query": [{ "key": "action", "value": "COMPLIANCE_APPROVED" }]
+                }
+              }
+            },
+            {
+              "name": "GET all logs — filter by action REJECTED",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{COMPLIANCE_URL}}/audit/logs?action=COMPLIANCE_REJECTED",
+                  "query": [{ "key": "action", "value": "COMPLIANCE_REJECTED" }]
+                }
+              }
+            },
+            {
+              "name": "GET all logs — filter by order_id",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{COMPLIANCE_URL}}/audit/logs?order_id={{orderId}}",
+                  "query": [{ "key": "order_id", "value": "{{orderId}}" }]
+                }
+              }
+            },
+            {
+              "name": "GET all logs — paginated (page 1, limit 10)",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{COMPLIANCE_URL}}/audit/logs?page=1&limit=10",
+                  "query": [
+                    { "key": "page",  "value": "1" },
+                    { "key": "limit", "value": "10" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET all logs — date range",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{COMPLIANCE_URL}}/audit/logs?from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z",
+                  "query": [
+                    { "key": "from", "value": "2026-01-01T00:00:00Z" },
+                    { "key": "to",   "value": "2026-12-31T23:59:59Z" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET distinct action types",
+              "request": {
+                "method": "GET",
+                "url": "{{COMPLIANCE_URL}}/audit/logs/actions"
+              }
+            },
+            {
+              "name": "GET stats (count per action)",
+              "request": {
+                "method": "GET",
+                "url": "{{COMPLIANCE_URL}}/audit/stats"
+              }
+            },
+            {
+              "name": "DELETE logs for order (admin)",
+              "request": {
+                "method": "DELETE",
+                "url": "{{COMPLIANCE_URL}}/audit/orders/{{orderId}}",
+                "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+              }
+            },
+            {
+              "name": "DELETE logs for order — non-admin → 403",
+              "request": {
+                "method": "DELETE",
+                "url": "{{COMPLIANCE_URL}}/audit/orders/{{orderId}}",
+                "header": [{ "key": "Authorization", "value": "Bearer {{buyerToken}}" }]
+              }
+            },
+            {
+              "name": "DELETE bulk — by action (admin)",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{COMPLIANCE_URL}}/audit/logs?action=COMPLIANCE_REJECTED",
+                  "query": [{ "key": "action", "value": "COMPLIANCE_REJECTED" }]
+                },
+                "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+              }
+            },
+            {
+              "name": "DELETE bulk — no filters → 400",
+              "request": {
+                "method": "DELETE",
+                "url": "{{COMPLIANCE_URL}}/audit/logs",
+                "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+              }
+            }
+          ]
+        }
+      ]
+    }
+
+  ]
+}

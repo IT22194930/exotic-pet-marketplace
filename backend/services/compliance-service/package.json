@@ -19,6 +19,8 @@
     "dotenv": "^16.4.7",
     "@supabase/supabase-js": "^2.97.0",
     "axios": "^1.13.5",
-    "express": "^5.2.1"
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "nodemailer": "^6.9.16"
   }
 }

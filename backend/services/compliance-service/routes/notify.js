@@ -2,13 +2,14 @@ const { Router } = require("express");
 const supabase = require("../config/supabase");
 const { getUserFromToken } = require("../helpers/auth");
 const { audit } = require("../helpers/audit");
+const { sendMail } = require("../helpers/mailer");
 
 const router = Router();
 
 /**
  * POST /notify/order-confirmed
  * Body: { orderId, channel, recipient, message }
- * Simulates sending a notification by persisting it to the DB.
+ * Persists the notification to DB and sends a real email when channel=email.
  */
 router.post("/order-confirmed", async (req, res) => {
   const { orderId, channel, recipient, message } = req.body;
@@ -40,10 +41,42 @@ router.post("/order-confirmed", async (req, res) => {
         .json({ error: "DB error", details: error.message });
     }
 
-    await audit(orderId, "NOTIFY_SENT", { notificationId: data.id });
+    // Send real email when channel is email
+    let emailMessageId = null;
+    if (channel === "email") {
+      try {
+        emailMessageId = await sendMail({
+          to: recipient,
+          subject: `Order Confirmed — #${orderId}`,
+          text: message,
+          html: `
+            <div style="font-family:sans-serif;max-width:600px;margin:auto">
+              <h2 style="color:#2d6a4f">🐾 Exotic Pet Marketplace</h2>
+              <h3>Order Confirmed</h3>
+              <p>Order ID: <strong>${orderId}</strong></p>
+              <p>${message}</p>
+              <hr/>
+              <small style="color:#888">This is an automated notification.</small>
+            </div>
+          `,
+        });
+        await audit(orderId, "NOTIFY_EMAIL_SENT", {
+          recipient,
+          emailMessageId,
+        });
+      } catch (mailErr) {
+        await audit(orderId, "NOTIFY_EMAIL_FAILED", { error: mailErr.message });
+        // Non-fatal: notification already saved to DB
+        console.error("SMTP error:", mailErr.message);
+      }
+    }
+
+    await audit(orderId, "NOTIFY_SENT", { notificationId: data.id, channel });
 
     res.json({
-      message: "Notification logged (simulated)",
+      message: "Notification sent",
+      channel,
+      emailSent: channel === "email" ? !!emailMessageId : null,
       notification: data,
     });
   } catch (err) {
