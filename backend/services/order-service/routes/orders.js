@@ -111,6 +111,72 @@ router.get("/my", async (req, res) => {
    }
 });
 
+// PATCH /orders/:id/cancel — buyer cancels their own order
+router.patch("/:id/cancel", async (req, res) => {
+   const authHeader = req.headers.authorization;
+   const supabase = req.app.locals.supabase;
+
+   try {
+      const user = await getMe(authHeader);
+
+      // 1) Fetch the order
+      const { data: order, error: findErr } = await supabase
+         .from("orders")
+         .select("*")
+         .eq("id", req.params.id)
+         .single();
+
+      if (findErr || !order) {
+         return res.status(404).json({ error: "Order not found" });
+      }
+
+      // 2) Make sure this order belongs to the buyer
+      if (order.buyer_id !== user.id) {
+         return res.status(403).json({ error: "You can only cancel your own orders" });
+      }
+
+      // 3) Only allow cancellation of "created" orders
+      if (order.status !== "created") {
+         return res.status(409).json({
+            error: `Cannot cancel an order with status "${order.status}"`,
+         });
+      }
+
+      // 4) Mark the order as cancelled
+      const { data: cancelled, error: updateErr } = await supabase
+         .from("orders")
+         .update({ status: "cancelled", reason: "Cancelled by buyer" })
+         .eq("id", req.params.id)
+         .select("*")
+         .single();
+
+      if (updateErr) {
+         return res.status(500).json({ error: "DB error", details: updateErr.message });
+      }
+
+      // 5) Reset the listing status back to "available"
+      if (order.listing_id) {
+         try {
+            await axios.patch(
+               `${LISTING_URL}/listings/${order.listing_id}/status`,
+               { status: "available" },
+               { headers: { Authorization: authHeader } }
+            );
+         } catch (listingErr) {
+            // Non-fatal: order is cancelled even if listing reset fails
+            console.warn("[cancel] Failed to reset listing status:", listingErr.message);
+         }
+      }
+
+      return res.json({ message: "Order cancelled", order: cancelled });
+   } catch (err) {
+      return res.status(401).json({
+         error: "Unauthorized",
+         details: err.response?.data || err.message,
+      });
+   }
+});
+
 // GET /orders/:id — single order by id
 router.get("/:id", async (req, res) => {
    const supabase = req.app.locals.supabase;

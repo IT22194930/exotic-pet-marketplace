@@ -113,6 +113,59 @@
 
 /**
  * @swagger
+ * /orders/{id}/cancel:
+ *   patch:
+ *     summary: Cancel an order
+ *     description: >
+ *       Cancels a buyer's own order if it is in "created" status.
+ *       After cancelling, calls the **Listing Service** to reset the
+ *       listing status back to "available" so other buyers can purchase it.
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The order UUID to cancel
+ *     responses:
+ *       200:
+ *         description: Order successfully cancelled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Order cancelled" }
+ *                 order:   { $ref: '#/components/schemas/Order' }
+ *       403:
+ *         description: Order belongs to a different buyer
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *       404:
+ *         description: Order not found
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *       409:
+ *         description: Order cannot be cancelled (not in "created" status)
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *       401:
+ *         description: Invalid or missing JWT
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ */
+
+
+/**
+ * @swagger
  * /orders/{id}:
  *   get:
  *     summary: Get a specific order by ID

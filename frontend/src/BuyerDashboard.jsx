@@ -4,19 +4,27 @@ import { getAuthUser } from "./utils/auth";
 const ORDER_URL = import.meta.env.VITE_ORDER_SERVICE_URL;
 
 const STATUS_STYLES = {
-  created:  "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  rejected: "bg-red-500/15    text-red-400    border-red-500/30",
-  pending:  "bg-amber-500/15  text-amber-400  border-amber-500/30",
-  shipped:  "bg-blue-500/15   text-blue-400   border-blue-500/30",
-  delivered:"bg-slate-500/15  text-slate-400  border-slate-500/30",
+  created:   "bg-emerald-500/15 text-emerald-400  border-emerald-500/30",
+  rejected:  "bg-red-500/15    text-red-400     border-red-500/30",
+  cancelled: "bg-slate-500/15  text-slate-400   border-slate-500/30",
+  pending:   "bg-amber-500/15  text-amber-400   border-amber-500/30",
+  shipped:   "bg-blue-500/15   text-blue-400    border-blue-500/30",
+  delivered: "bg-teal-500/15   text-teal-400    border-teal-500/30",
 };
 
 export default function BuyerDashboard() {
-  const [orders, setOrders]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState("");
+  const [orders, setOrders]     = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState("");
+  const [toast, setToast]       = useState(null);   // { type, message }
+  const [cancelling, setCancelling] = useState(null); // order id being cancelled
 
   const me = getAuthUser();
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -39,10 +47,34 @@ export default function BuyerDashboard() {
     load();
   }, []);
 
+  const handleCancel = async (orderId) => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+    const token = localStorage.getItem("jwt");
+    setCancelling(orderId);
+    try {
+      const res = await fetch(`${ORDER_URL}/orders/${orderId}/cancel`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.details || data.error || "Cancellation failed");
+
+      // Update order in local state without refetching
+      setOrders(prev =>
+        prev.map(o => o.id === orderId ? { ...o, status: "cancelled", reason: "Cancelled by buyer" } : o)
+      );
+      showToast("success", "Order cancelled. The listing is now available again.");
+    } catch (err) {
+      showToast("error", err.message);
+    } finally {
+      setCancelling(null);
+    }
+  };
+
   const stats = [
     { label: "Total Orders",    value: orders.length },
-    { label: "Created",         value: orders.filter(o => o.status === "created").length },
-    { label: "Rejected",        value: orders.filter(o => o.status === "rejected").length },
+    { label: "Active",          value: orders.filter(o => o.status === "created").length },
+    { label: "Cancelled",       value: orders.filter(o => o.status === "cancelled").length },
   ];
 
   return (
@@ -91,12 +123,13 @@ export default function BuyerDashboard() {
                   <th className="text-left px-6 py-4">Status</th>
                   <th className="text-left px-6 py-4">Reason</th>
                   <th className="text-left px-6 py-4">Placed</th>
+                  <th className="text-left px-6 py-4">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-16 text-center text-slate-500">
+                    <td colSpan={6} className="px-6 py-16 text-center text-slate-500">
                       No orders yet.{" "}
                       <a href="/shop" className="text-emerald-400 hover:text-emerald-300 underline">
                         Browse the Shop →
@@ -121,6 +154,19 @@ export default function BuyerDashboard() {
                       <td className="px-6 py-4 text-slate-500 text-xs">
                         {o.created_at ? new Date(o.created_at).toLocaleString() : "—"}
                       </td>
+                      <td className="px-6 py-4">
+                        {o.status === "created" ? (
+                          <button
+                            onClick={() => handleCancel(o.id)}
+                            disabled={cancelling === o.id}
+                            className="px-3 py-1.5 text-xs font-semibold text-red-400 rounded-lg border border-red-500/25 bg-red-500/10 hover:bg-red-500/20 hover:text-red-300 transition-all disabled:opacity-50"
+                          >
+                            {cancelling === o.id ? "Cancelling…" : "Cancel"}
+                          </button>
+                        ) : (
+                          <span className="text-slate-700 text-xs">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -129,6 +175,20 @@ export default function BuyerDashboard() {
           </div>
         )}
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-8 right-8 z-50">
+          <div className={`px-5 py-4 rounded-2xl border shadow-[0_12px_48px_rgba(0,0,0,0.5)] flex items-center gap-3 backdrop-blur ${
+            toast.type === "success"
+              ? "bg-[#064e3b]/90 border-emerald-500/30 text-emerald-100"
+              : "bg-[#7f1d1d]/90 border-red-500/30 text-red-100"
+          }`}>
+            <span className="text-xl">{toast.type === "success" ? "✅" : "⚠️"}</span>
+            <span className="text-sm font-medium">{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
