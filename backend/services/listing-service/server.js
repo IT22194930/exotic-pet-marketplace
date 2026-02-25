@@ -167,6 +167,146 @@ app.post("/listings/:id/image", upload.single("image"), async (req, res) => {
   }
 });
 
+// ✅ Get seller's own listings (seller only)
+app.get("/listings/my", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (user.role !== "seller") {
+      return res.status(403).json({ error: "Only sellers can access their listings" });
+    }
+
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .eq("seller_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error)
+      return res.status(500).json({ error: "DB error", details: error.message });
+
+    res.json({ count: data.length, listings: data });
+  } catch (err) {
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
+  }
+});
+
+// ✅ Update listing (seller only)
+app.put("/listings/:id", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (user.role !== "seller") {
+      return res.status(403).json({ error: "Only sellers can update listings" });
+    }
+
+    const listingId = req.params.id;
+
+    // Check listing exists and belongs to this seller
+    const { data: existing, error: findErr } = await supabase
+      .from("listings")
+      .select("id, seller_id")
+      .eq("id", listingId)
+      .single();
+
+    if (findErr || !existing)
+      return res.status(404).json({ error: "Listing not found" });
+    if (existing.seller_id !== user.id)
+      return res.status(403).json({ error: "Not your listing" });
+
+    // Extract only permitted fields
+    const { title, species, type, price } = req.body;
+    const updates = {};
+    if (title !== undefined) updates.title = title;
+    if (species !== undefined) updates.species = species;
+    if (type !== undefined) {
+      if (!["exotic", "livestock"].includes(type)) {
+        return res.status(400).json({ error: "type must be 'exotic' or 'livestock'" });
+      }
+      updates.type = type;
+    }
+    if (price !== undefined) {
+      const numPrice = Number(price);
+      if (isNaN(numPrice)) {
+        return res.status(400).json({ error: "price must be a number" });
+      }
+      updates.price = numPrice;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No valid fields provided to update" });
+    }
+
+    const { data: updated, error: updateErr } = await supabase
+      .from("listings")
+      .update(updates)
+      .eq("id", listingId)
+      .select("*")
+      .single();
+
+    if (updateErr)
+      return res.status(500).json({ error: "DB error", details: updateErr.message });
+
+    res.json({ message: "Listing updated", listing: updated });
+  } catch (err) {
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
+  }
+});
+
+// ✅ Delete listing (seller only)
+app.delete("/listings/:id", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (user.role !== "seller") {
+      return res.status(403).json({ error: "Only sellers can delete listings" });
+    }
+
+    const listingId = req.params.id;
+
+    // Check listing exists and belongs to this seller
+    const { data: existing, error: findErr } = await supabase
+      .from("listings")
+      .select("id, seller_id")
+      .eq("id", listingId)
+      .single();
+
+    if (findErr || !existing)
+      return res.status(404).json({ error: "Listing not found" });
+    if (existing.seller_id !== user.id)
+      return res.status(403).json({ error: "Not your listing" });
+
+    // Optionally remove all images under <listingId>/ in storage
+    const { data: files, error: listErr } = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .list(listingId);
+
+    if (!listErr && files && files.length > 0) {
+      const paths = files.map((f) => `${listingId}/${f.name}`);
+      await supabase.storage.from(SUPABASE_BUCKET).remove(paths);
+    }
+
+    // Delete the listing row
+    const { error: deleteErr } = await supabase
+      .from("listings")
+      .delete()
+      .eq("id", listingId);
+
+    if (deleteErr)
+      return res.status(500).json({ error: "DB error", details: deleteErr.message });
+
+    res.json({ message: "Listing deleted" });
+  } catch (err) {
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
+  }
+});
+
 // ✅ Get listing
 app.get("/listings/:id", async (req, res) => {
   const { data, error } = await supabase
