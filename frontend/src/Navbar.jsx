@@ -46,6 +46,16 @@ export default function Navbar() {
         </span>
       </Link>
 
+      {/* Centre nav links */}
+      <div className="hidden md:flex items-center gap-1">
+        <Link
+          to="/shop"
+          className="px-4 py-2 text-sm font-medium text-slate-300 rounded-lg hover:text-white hover:bg-white/[0.06] transition-all duration-200 no-underline"
+        >
+          🛒 Shop
+        </Link>
+      </div>
+
       {/* Nav actions */}
       <div className="flex items-center gap-3">
         {loggedIn ? (
