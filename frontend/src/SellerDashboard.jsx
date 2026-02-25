@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { getAuthUser } from "./utils/auth";
 import PetCard from "./PetCard";
+import UploadImage from "./components/UploadImage";
 
 const LISTING_URL = import.meta.env.VITE_LISTING_SERVICE_URL;
 
@@ -41,12 +42,8 @@ export default function SellerDashboard() {
   // Delete state
   const [deleting, setDeleting] = useState(null); // id currently being deleted
 
-  // Create-modal image state
-  const [createImageFile, setCreateImageFile]         = useState(null);
-  const [createImagePreview, setCreateImagePreview]   = useState(null);
-  const [createUploadProgress, setCreateUploadProgress] = useState(0);
-  const [createUploading, setCreateUploading]         = useState(false);
-  const createImageRef = useRef(null);
+  // Created listing (step-2 image upload)
+  const [createdListing, setCreatedListing] = useState(null);
 
   const me = getAuthUser(); // { id, email, role }
   const token = localStorage.getItem("jwt");
@@ -93,38 +90,9 @@ export default function SellerDashboard() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.details || data.error || "Failed to create listing");
-
-      // Upload image if one was selected
-      if (createImageFile) {
-        setCreateUploading(true);
-        setCreateUploadProgress(0);
-        await new Promise((resolve, reject) => {
-          const fd = new FormData();
-          fd.append("image", createImageFile);
-          const xhr = new XMLHttpRequest();
-          xhr.upload.addEventListener("progress", (ev) => {
-            if (ev.lengthComputable) setCreateUploadProgress(Math.round((ev.loaded / ev.total) * 100));
-          });
-          xhr.addEventListener("load", () => {
-            const resp = JSON.parse(xhr.responseText);
-            if (xhr.status >= 200 && xhr.status < 300) resolve(resp);
-            else reject(new Error(resp.details || resp.error || "Image upload failed"));
-          });
-          xhr.addEventListener("error", () => reject(new Error("Network error during image upload")));
-          xhr.open("POST", `${LISTING_URL}/listings/${data.listing.id}/image`);
-          xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-          xhr.send(fd);
-        });
-        setCreateUploading(false);
-        if (createImagePreview) URL.revokeObjectURL(createImagePreview);
-        setCreateImageFile(null);
-        setCreateImagePreview(null);
-      }
-
-      setFormSuccess("Listing created!");
+      // Move to step 2 — image upload
       setForm(EMPTY_FORM);
-      await loadListings();
-      setTimeout(() => { setShowModal(false); setFormSuccess(""); }, 1000);
+      setCreatedListing(data.listing);
     } catch (err) {
       setFormError(err.message);
     } finally {
@@ -136,26 +104,15 @@ export default function SellerDashboard() {
     setForm(EMPTY_FORM);
     setFormError("");
     setFormSuccess("");
-    setCreateImageFile(null);
-    setCreateImagePreview(null);
-    setCreateUploadProgress(0);
+    setCreatedListing(null);
     setShowModal(true);
   };
-  const closeModal = () => {
-    if (createImagePreview) URL.revokeObjectURL(createImagePreview);
-    setCreateImageFile(null);
-    setCreateImagePreview(null);
+  const closeModal = async () => {
+    setCreatedListing(null);
     setShowModal(false);
+    await loadListings();
   };
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleCreateImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (createImagePreview) URL.revokeObjectURL(createImagePreview);
-    setCreateImageFile(file);
-    setCreateImagePreview(URL.createObjectURL(file));
-  };
 
   /* ── Edit listing ── */
   const openEditModal = (listing) => {
@@ -449,88 +406,89 @@ export default function SellerDashboard() {
             className="w-full max-w-md bg-[#0f1a2e] border border-white/[0.09] rounded-2xl px-8 py-8 shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
             style={{ animation: "cardIn 0.3s cubic-bezier(0.22,1,0.36,1)" }}
           >
-            <h2 className="text-xl font-bold text-slate-100 mb-6 font-serif">New Listing</h2>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className={labelClass}>Title</label>
-                <input name="title" value={form.title} onChange={handleChange} required
-                  placeholder="e.g. Blue-and-Gold Macaw" className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>Species</label>
-                <input name="species" value={form.species} onChange={handleChange} required
-                  placeholder="e.g. Ara ararauna" className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>Type</label>
-                <select name="type" value={form.type} onChange={handleChange} className={`${inputClass} cursor-pointer`}>
-                  {[["exotic","Exotic"],["livestock","Livestock"]].map(([val, label]) => (
-                    <option key={val} value={val} className="bg-[#1a2540]">{label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelClass}>Price (USD)</label>
-                <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleChange} required
-                  placeholder="0.00" className={inputClass} />
-              </div>
+            {/* Step indicator */}
+            <div className="flex items-center gap-2 mb-6">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border ${
+                createdListing ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" : "bg-emerald-500 border-emerald-400 text-white"
+              }`}>1</div>
+              <div className={`flex-1 h-px ${createdListing ? "bg-emerald-500/40" : "bg-white/10"}`} />
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border ${
+                createdListing ? "bg-emerald-500 border-emerald-400 text-white" : "bg-white/[0.04] border-white/10 text-slate-500"
+              }`}>2</div>
+            </div>
 
-              {/* Image upload */}
-              <div>
-                <label className={labelClass}>Image <span className="normal-case text-slate-600">(optional)</span></label>
-                {createImagePreview && (
-                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-white/[0.03] mb-2">
-                    <img src={createImagePreview} alt="Preview" className="w-full h-full object-cover" />
-                    {createUploading && (
-                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2">
-                        <span className="text-white text-sm font-semibold">{createUploadProgress}%</span>
-                        <div className="w-2/3 h-1.5 rounded-full bg-white/20 overflow-hidden">
-                          <div className="h-full bg-emerald-400 rounded-full transition-all duration-200" style={{ width: `${createUploadProgress}%` }} />
-                        </div>
-                      </div>
-                    )}
+            {!createdListing ? (
+              /* ── Step 1: listing details ── */
+              <>
+                <h2 className="text-xl font-bold text-slate-100 mb-6 font-serif">New Listing</h2>
+                <form onSubmit={handleCreate} className="space-y-4">
+                  <div>
+                    <label className={labelClass}>Title</label>
+                    <input name="title" value={form.title} onChange={handleChange} required
+                      placeholder="e.g. Blue-and-Gold Macaw" className={inputClass} />
                   </div>
-                )}
-                <label className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border cursor-pointer transition-all ${
-                  saving ? "opacity-50 cursor-not-allowed border-white/10 text-slate-500 bg-white/[0.03]" : "border-white/10 text-slate-300 bg-white/[0.04] hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-400"
-                }`}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                  {createImageFile ? createImageFile.name : "Choose image…"}
-                  <input ref={createImageRef} type="file" accept="image/*" className="hidden"
-                    disabled={saving} onChange={handleCreateImageChange} />
-                </label>
-              </div>
+                  <div>
+                    <label className={labelClass}>Species</label>
+                    <input name="species" value={form.species} onChange={handleChange} required
+                      placeholder="e.g. Ara ararauna" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Type</label>
+                    <select name="type" value={form.type} onChange={handleChange} className={`${inputClass} cursor-pointer`}>
+                      {[["exotic","Exotic"],["livestock","Livestock"]].map(([val, label]) => (
+                        <option key={val} value={val} className="bg-[#1a2540]">{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Price (USD)</label>
+                    <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleChange} required
+                      placeholder="0.00" className={inputClass} />
+                  </div>
 
-              {formError && (
-                <div className="flex items-start gap-2 px-3.5 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-sm">
-                  ⚠️ {formError}
-                </div>
-              )}
-              {formSuccess && (
-                <div className="flex items-start gap-2 px-3.5 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm">
-                  ✅ {formSuccess}
-                </div>
-              )}
+                  {formError && (
+                    <div className="flex items-start gap-2 px-3.5 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-sm">
+                      ⚠️ {formError}
+                    </div>
+                  )}
 
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={closeModal}
-                  className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-slate-400 border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] transition-all">
-                  Cancel
-                </button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-xl text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_16px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all">
-                  {saving
-                    ? <><span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Saving…</>
-                    : "Create Listing"
-                  }
-                </button>
-              </div>
-            </form>
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={closeModal}
+                      className="flex-1 py-2.5 text-sm font-semibold rounded-xl text-slate-400 border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] transition-all">
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={saving}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-xl text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_16px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all">
+                      {saving
+                        ? <><span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Saving…</>
+                        : "Create Listing →"
+                      }
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              /* ── Step 2: upload image ── */
+              <>
+                <h2 className="text-xl font-bold text-slate-100 mb-1 font-serif">Add a Photo</h2>
+                <p className="text-sm text-slate-400 mb-5">
+                  <span className="text-emerald-400 font-medium">✅ Listing created!</span> Upload an image for{" "}
+                  <span className="text-slate-200 font-medium">{createdListing.title}</span>, or skip.
+                </p>
+                <UploadImage
+                  listingId={createdListing.id}
+                  onUploaded={(updated) => setCreatedListing(updated)}
+                />
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={closeModal}
+                    className="flex-1 py-2.5 text-sm font-bold rounded-xl text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_16px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 transition-all"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
