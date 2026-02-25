@@ -2,6 +2,8 @@ const express = require("express");
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
 const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 
 const app = express();
 app.use(express.json());
@@ -23,11 +25,13 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-app.get("/health", (req, res) => {
-  res.json({ service: "order-service", status: "ok" });
-});
+// ── Swagger UI ────────────────────────────────────────────────────────────────
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: "Order Service API Docs",
+}));
 
-// --- helper: validate token via Identity Service
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 async function getMe(authHeader) {
   if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing Bearer token");
   const r = await axios.get(`${IDENTITY_URL}/users/me`, {
@@ -36,31 +40,28 @@ async function getMe(authHeader) {
   return r.data;
 }
 
-// --- helper: fetch listing via Listing Service
 async function getListing(listingId) {
   const r = await axios.get(`${LISTING_URL}/listings/${listingId}`);
-  return r.data; // should include species, price, status, seller_id
+  return r.data;
 }
 
-// --- helper: compliance check (optional but good)
 async function checkCompliance(authHeader, payload) {
   try {
     const r = await axios.post(`${COMPLIANCE_URL}/compliance/check`, payload, {
       headers: { Authorization: authHeader }
     });
-    return r.data; // {allowed, reason, restricted}
+    return r.data;
   } catch (e) {
-    // If compliance-service not ready, we still allow (keeps it simple).
     return { allowed: true, reason: "Compliance skipped/unavailable" };
   }
 }
 
-/**
- * ✅ Create an order (simple)
- * POST /orders
- * Body: { listingId }
- * Header: Authorization: Bearer <token>
- */
+// ── Routes ────────────────────────────────────────────────────────────────────
+
+app.get("/health", (req, res) => {
+  res.json({ service: "order-service", status: "ok" });
+});
+
 app.post("/orders", async (req, res) => {
   const authHeader = req.headers.authorization;
   const { listingId } = req.body;
@@ -68,30 +69,23 @@ app.post("/orders", async (req, res) => {
   if (!listingId) return res.status(400).json({ error: "listingId is required" });
 
   try {
-    // 1) Validate buyer
     const user = await getMe(authHeader);
-
-    // 2) Fetch listing
     const listing = await getListing(listingId);
 
-    // Basic availability check
     if (listing.status && listing.status !== "available") {
       return res.status(409).json({ error: "Listing not available", status: listing.status });
     }
 
     const sellerId = listing.seller_id || listing.sellerId;
-
-    // 3) Compliance check (simple)
     const compliance = await checkCompliance(authHeader, {
-      orderId: "00000000-0000-0000-0000-000000000000", // placeholder; not needed for simple
+      orderId: "00000000-0000-0000-0000-000000000000",
       species: listing.species,
-      sellerId: sellerId
+      sellerId,
     });
 
     const status = compliance.allowed ? "created" : "rejected";
     const reason = compliance.allowed ? null : compliance.reason;
 
-    // 4) Save order in Supabase
     const { data: order, error } = await supabase
       .from("orders")
       .insert([{
@@ -100,7 +94,7 @@ app.post("/orders", async (req, res) => {
         species: listing.species || null,
         price: Number(listing.price || 0),
         status,
-        reason
+        reason,
       }])
       .select("*")
       .single();
@@ -111,23 +105,22 @@ app.post("/orders", async (req, res) => {
       message: status === "created" ? "Order created" : "Order rejected",
       order,
       listing: { id: listingId, species: listing.species, price: listing.price },
-      compliance
+      compliance,
     });
   } catch (err) {
     return res.status(401).json({
       error: "Order failed",
-      details: err.response?.data || err.message
+      details: err.response?.data || err.message,
     });
   }
 });
 
-// ✅ Get my orders (requires JWT) — must be BEFORE /orders/:id or Express matches "my" as :id
+// NOTE: /orders/my must be defined BEFORE /orders/:id
+// otherwise Express matches "my" as the :id parameter
 app.get("/orders/my", async (req, res) => {
   const authHeader = req.headers.authorization;
-
   try {
     const user = await getMe(authHeader);
-
     const { data, error } = await supabase
       .from("orders")
       .select("*")
@@ -135,14 +128,12 @@ app.get("/orders/my", async (req, res) => {
       .order("created_at", { ascending: false });
 
     if (error) return res.status(500).json({ error: "DB error", details: error.message });
-
     res.json({ count: data.length, orders: data });
   } catch (err) {
     res.status(401).json({ error: "Unauthorized", details: err.response?.data || err.message });
   }
 });
 
-// ✅ Get order by id
 app.get("/orders/:id", async (req, res) => {
   const { data, error } = await supabase
     .from("orders")
