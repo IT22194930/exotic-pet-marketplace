@@ -211,7 +211,7 @@ app.put("/listings/:id", async (req, res) => {
     // Check listing exists and belongs to this seller
     const { data: existing, error: findErr } = await supabase
       .from("listings")
-      .select("id, seller_id")
+      .select("id, seller_id, image_url")
       .eq("id", listingId)
       .single();
 
@@ -221,7 +221,7 @@ app.put("/listings/:id", async (req, res) => {
       return res.status(403).json({ error: "Not your listing" });
 
     // Extract only permitted fields
-    const { title, species, type, price } = req.body;
+    const { title, species, type, price, removeImage } = req.body;
     const updates = {};
     if (title !== undefined) updates.title = title;
     if (species !== undefined) updates.species = species;
@@ -237,6 +237,19 @@ app.put("/listings/:id", async (req, res) => {
         return res.status(400).json({ error: "price must be a number" });
       }
       updates.price = numPrice;
+    }
+    if (removeImage === true) {
+      updates.image_url = null;
+      // Delete stored files for this listing from Storage
+      if (existing.image_url) {
+        const { data: files, error: listErr } = await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .list(listingId);
+        if (!listErr && files && files.length > 0) {
+          const paths = files.map((f) => `${listingId}/${f.name}`);
+          await supabase.storage.from(SUPABASE_BUCKET).remove(paths);
+        }
+      }
     }
 
     if (Object.keys(updates).length === 0) {
