@@ -4,9 +4,14 @@ services:
     container_name: identity-service
     ports:
       - "8001:8001"
+    volumes:
+      - ./services/identity-service:/app
+      - /app/node_modules
+    command: npm run dev
     environment:
       - PORT=8001
       - JWT_SECRET=CN4vbU9nRdi1ubOq5a1IYcw5WBvi7FfTz8iqC8ojWGA
+      - COMPLIANCE_URL=http://compliance-service:8004
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
       - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBscnV1enViZnVsY2NyaW9wZ2dzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTg0MTA5MSwiZXhwIjoyMDg3NDE3MDkxfQ.hr6sewqiwCtdXTiul3SxkKrwJ33i0BCs4Am7Wrp3siI
 
@@ -15,17 +20,26 @@ services:
     container_name: listing-service
     ports:
       - "8002:8002"
+    volumes:
+      - ./services/listing-service:/app
+      - /app/node_modules
+    command: npm run dev
     environment:
       - PORT=8002
       - IDENTITY_URL=http://identity-service:8001
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
       - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBscnV1enViZnVsY2NyaW9wZ2dzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTg0MTA5MSwiZXhwIjoyMDg3NDE3MDkxfQ.hr6sewqiwCtdXTiul3SxkKrwJ33i0BCs4Am7Wrp3siI
       - SUPABASE_BUCKET=listing-images
+
   order-service:
     build: ./services/order-service
     container_name: order-service
     ports:
       - "8003:8003"
+    volumes:
+      - ./services/order-service:/app
+      - /app/node_modules
+    command: npm run dev
     environment:
       - PORT=8003
       - IDENTITY_URL=http://identity-service:8001
@@ -39,6 +53,10 @@ services:
     container_name: compliance-service
     ports:
       - "8004:8004"
+    volumes:
+      - ./services/compliance-service:/app
+      - /app/node_modules
+    command: npm run dev
     environment:
       - PORT=8004
       - IDENTITY_URL=http://identity-service:8001
