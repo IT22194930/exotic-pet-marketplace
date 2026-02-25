@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getAuthUser } from "./utils/auth";
+
+const IDENTITY_URL = import.meta.env.VITE_IDENTITY_SERVICE_URL;
 
 const ROLE_COLORS = {
   admin:  "bg-purple-500/15 text-purple-400 border-purple-500/30",
@@ -6,29 +9,85 @@ const ROLE_COLORS = {
   buyer:  "bg-sky-500/15 text-sky-400 border-sky-500/30",
 };
 
-const STATUS_COLORS = {
-  Active: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  Banned: "bg-red-500/15 text-red-400 border-red-500/30",
-};
-
-const INITIAL_USERS = [
-  { id: 1, email: "alice@example.com",   role: "buyer",  status: "Active", joined: "2025-01-10" },
-  { id: 2, email: "bob@example.com",     role: "seller", status: "Active", joined: "2025-02-14" },
-  { id: 3, email: "charlie@example.com", role: "seller", status: "Banned", joined: "2025-03-05" },
-  { id: 4, email: "diana@example.com",   role: "buyer",  status: "Active", joined: "2025-04-20" },
-  { id: 5, email: "evan@example.com",    role: "admin",  status: "Active", joined: "2024-12-01" },
-];
-
 export default function AdminDashboard() {
-  const [users, setUsers] = useState(INITIAL_USERS);
-  const [search, setSearch] = useState("");
+  const [users, setUsers]       = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState("");
+  const [search, setSearch]     = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [toast, setToast]       = useState(null);
+  const [actionId, setActionId] = useState(null); // id of user being acted on
 
-  const toggleBan = (id) =>
-    setUsers(users.map((u) => u.id === id ? { ...u, status: u.status === "Active" ? "Banned" : "Active" } : u));
+  const me = getAuthUser();
+  const token = localStorage.getItem("jwt");
 
-  const changeRole = (id, role) =>
-    setUsers(users.map((u) => u.id === id ? { ...u, role } : u));
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // ── Fetch all users ──
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch(`${IDENTITY_URL}/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.details || data.error || "Failed to fetch users");
+        setUsers(data.users || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  // ── Verify seller ──
+  const handleVerify = async (userId) => {
+    setActionId(userId);
+    try {
+      const res = await fetch(`${IDENTITY_URL}/sellers/${userId}/verify`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.details || data.error || "Failed to verify seller");
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, seller_verified: true } : u));
+      showToast("success", "Seller verified successfully!");
+    } catch (err) {
+      showToast("error", err.message);
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  // ── Change role ──
+  const handleRoleChange = async (userId, newRole) => {
+    setActionId(userId);
+    try {
+      const res = await fetch(`${IDENTITY_URL}/users/${userId}/role`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ role: newRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.details || data.error || "Failed to change role");
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      showToast("success", `Role changed to ${newRole}`);
+    } catch (err) {
+      showToast("error", err.message);
+    } finally {
+      setActionId(null);
+    }
+  };
 
   const filtered = users.filter((u) => {
     const matchSearch = u.email.toLowerCase().includes(search.toLowerCase());
@@ -39,20 +98,22 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#0a0f1a] pt-24 pb-16 px-6 md:px-10">
 
-      {/* Page header */}
+      {/* Header */}
       <div className="max-w-6xl mx-auto mb-8">
         <p className="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-1">Admin Dashboard</p>
         <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight font-serif">User Management</h1>
-        <p className="text-slate-400 text-sm mt-1">Manage all platform users, roles, and account status.</p>
+        <p className="text-slate-400 text-sm mt-1">
+          Signed in as <span className="text-slate-200 font-medium">{me?.email}</span>
+        </p>
       </div>
 
-      {/* Stats row */}
+      {/* Stats */}
       <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Total Users",  value: users.length },
-          { label: "Admins",       value: users.filter(u=>u.role==="admin").length },
-          { label: "Sellers",      value: users.filter(u=>u.role==="seller").length },
-          { label: "Active",       value: users.filter(u=>u.status==="Active").length },
+          { label: "Total Users",       value: users.length },
+          { label: "Sellers",           value: users.filter(u => u.role === "seller").length },
+          { label: "Verified Sellers",  value: users.filter(u => u.role === "seller" && u.seller_verified).length },
+          { label: "Pending Verify",    value: users.filter(u => u.role === "seller" && !u.seller_verified).length },
         ].map((s) => (
           <div key={s.label} className="rounded-2xl bg-[#0f1a2e]/80 border border-white/[0.07] px-5 py-5 backdrop-blur">
             <p className="text-2xl font-extrabold text-slate-100 font-serif">{s.value}</p>
@@ -82,70 +143,112 @@ export default function AdminDashboard() {
         </select>
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="max-w-6xl mx-auto mb-6 flex items-center gap-3 px-4 py-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+
       {/* Table */}
       <div className="max-w-6xl mx-auto rounded-2xl border border-white/[0.07] bg-[#0f1a2e]/80 backdrop-blur overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/[0.07] text-[0.72rem] uppercase tracking-widest text-slate-500">
-                <th className="text-left px-6 py-4">Email</th>
-                <th className="text-left px-6 py-4">Role</th>
-                <th className="text-left px-6 py-4">Status</th>
-                <th className="text-left px-6 py-4">Joined</th>
-                <th className="text-right px-6 py-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                    No users match your filters.
-                  </td>
+        {loading ? (
+          <div className="flex items-center justify-center gap-3 py-20 text-slate-400">
+            <span className="w-5 h-5 rounded-full border-2 border-slate-600 border-t-purple-400 animate-spin" />
+            Loading users…
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/[0.07] text-[0.72rem] uppercase tracking-widest text-slate-500">
+                  <th className="text-left px-6 py-4">Email</th>
+                  <th className="text-left px-6 py-4">Role</th>
+                  <th className="text-left px-6 py-4">Seller Status</th>
+                  <th className="text-left px-6 py-4">Joined</th>
+                  <th className="text-right px-6 py-4">Actions</th>
                 </tr>
-              )}
-              {filtered.map((u) => (
-                <tr key={u.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                  <td className="px-6 py-4 text-slate-100 font-medium">{u.email}</td>
+              </thead>
+              <tbody>
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                      No users match your filters.
+                    </td>
+                  </tr>
+                )}
+                {filtered.map((u) => (
+                  <tr key={u.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                    <td className="px-6 py-4 text-slate-100 font-medium">{u.email}</td>
 
-                  {/* Role inline select */}
-                  <td className="px-6 py-4">
-                    <select
-                      value={u.role}
-                      onChange={(e) => changeRole(u.id, e.target.value)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border cursor-pointer bg-transparent focus:outline-none ${ROLE_COLORS[u.role]}`}
-                    >
-                      <option value="buyer"  className="bg-[#1a2540] text-slate-100">buyer</option>
-                      <option value="seller" className="bg-[#1a2540] text-slate-100">seller</option>
-                      <option value="admin"  className="bg-[#1a2540] text-slate-100">admin</option>
-                    </select>
-                  </td>
+                    {/* Role select */}
+                    <td className="px-6 py-4">
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                        disabled={actionId === u.id}
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border cursor-pointer bg-transparent focus:outline-none disabled:opacity-50 ${ROLE_COLORS[u.role]}`}
+                      >
+                        <option value="buyer"  className="bg-[#1a2540] text-slate-100">buyer</option>
+                        <option value="seller" className="bg-[#1a2540] text-slate-100">seller</option>
+                        <option value="admin"  className="bg-[#1a2540] text-slate-100">admin</option>
+                      </select>
+                    </td>
 
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[u.status]}`}>
-                      {u.status}
-                    </span>
-                  </td>
+                    {/* Seller verification */}
+                    <td className="px-6 py-4">
+                      {u.role === "seller" ? (
+                        u.seller_verified ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+                            ✓ Verified
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-amber-500/15 text-amber-400 border-amber-500/30">
+                            ⏳ Pending
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-slate-700 text-xs">—</span>
+                      )}
+                    </td>
 
-                  <td className="px-6 py-4 text-slate-500">{u.joined}</td>
+                    <td className="px-6 py-4 text-slate-500 text-xs">
+                      {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
+                    </td>
 
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => toggleBan(u.id)}
-                      className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
-                        u.status === "Active"
-                          ? "text-red-400 border-red-500/20 bg-red-500/[0.07] hover:bg-red-500/15"
-                          : "text-emerald-400 border-emerald-500/20 bg-emerald-500/[0.07] hover:bg-emerald-500/15"
-                      }`}
-                    >
-                      {u.status === "Active" ? "Ban" : "Unban"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {/* Actions */}
+                    <td className="px-6 py-4 text-right">
+                      {u.role === "seller" && !u.seller_verified && (
+                        <button
+                          onClick={() => handleVerify(u.id)}
+                          disabled={actionId === u.id}
+                          className="px-3.5 py-1.5 text-xs font-semibold rounded-lg border text-emerald-400 border-emerald-500/20 bg-emerald-500/[0.07] hover:bg-emerald-500/15 transition-all disabled:opacity-50"
+                        >
+                          {actionId === u.id ? "Verifying…" : "✓ Verify Seller"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-8 right-8 z-50">
+          <div className={`px-5 py-4 rounded-2xl border shadow-[0_12px_48px_rgba(0,0,0,0.5)] flex items-center gap-3 backdrop-blur ${
+            toast.type === "success"
+              ? "bg-[#064e3b]/90 border-emerald-500/30 text-emerald-100"
+              : "bg-[#7f1d1d]/90 border-red-500/30 text-red-100"
+          }`}>
+            <span className="text-xl">{toast.type === "success" ? "✅" : "⚠️"}</span>
+            <span className="text-sm font-medium">{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
