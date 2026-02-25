@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { getAuthUser } from "./utils/auth";
 import PetCard from "./PetCard";
 
-const LISTING_URL = import.meta.env.VITE_LISTING_SERVICE_URL;
+const LISTING_URL  = import.meta.env.VITE_LISTING_SERVICE_URL;
+const IDENTITY_URL = import.meta.env.VITE_IDENTITY_SERVICE_URL;
 
 const STATUS_COLORS = {
   available: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
@@ -13,18 +14,35 @@ const STATUS_COLORS = {
 const EMPTY_FORM = { title: "", species: "", type: "exotic", price: "" };
 
 export default function SellerDashboard() {
-  const [listings, setListings]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [apiError, setApiError]   = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm]           = useState(EMPTY_FORM);
-  const [saving, setSaving]       = useState(false);
-  const [formError, setFormError] = useState("");
+  const [listings, setListings]       = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [apiError, setApiError]       = useState("");
+  const [showModal, setShowModal]     = useState(false);
+  const [form, setForm]               = useState(EMPTY_FORM);
+  const [saving, setSaving]           = useState(false);
+  const [formError, setFormError]     = useState("");
   const [formSuccess, setFormSuccess] = useState("");
-  const [view, setView]           = useState("table"); // "table" | "grid"
+  const [view, setView]               = useState("table");
+  const [verified, setVerified]       = useState(null);   // null = loading, true/false
 
-  const me = getAuthUser(); // { id, email, role }
+  const me = getAuthUser();
   const token = localStorage.getItem("jwt");
+
+  // ── Check seller verification status ──
+  useEffect(() => {
+    const checkVerification = async () => {
+      try {
+        const res = await fetch(`${IDENTITY_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setVerified(!!data.sellerVerified);
+      } catch {
+        setVerified(false);
+      }
+    };
+    checkVerification();
+  }, []);
 
   /* ── Fetch all listings, then filter to this seller's ── */
   const loadListings = useCallback(async () => {
@@ -135,12 +153,25 @@ export default function SellerDashboard() {
 
           <button
             onClick={openModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_16px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 hover:shadow-[0_6px_24px_rgba(16,185,129,0.45)] transition-all duration-200"
+            disabled={verified === false}
+            title={verified === false ? "Your account must be verified first" : ""}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_16px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 hover:shadow-[0_6px_24px_rgba(16,185,129,0.45)] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
           >
             + New Listing
           </button>
         </div>
       </div>
+
+      {/* Verification banner */}
+      {verified === false && (
+        <div className="max-w-6xl mx-auto mb-6 flex items-center gap-3 px-5 py-4 rounded-xl bg-amber-500/10 border border-amber-500/25">
+          <span className="text-2xl">⏳</span>
+          <div>
+            <p className="text-amber-200 font-semibold text-sm">Account Pending Verification</p>
+            <p className="text-amber-400/70 text-xs mt-0.5">An admin must verify your seller account before you can create listings. You can view your existing listings below.</p>
+          </div>
+        </div>
+      )}
 
       {/* Stats row */}
       <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
@@ -176,7 +207,10 @@ export default function SellerDashboard() {
           {listings.length === 0 ? (
             <div className="py-20 text-center text-slate-500">
               No listings yet.{" "}
-              <button onClick={openModal} className="text-emerald-400 hover:text-emerald-300 underline">Create your first listing →</button>
+              {verified === false
+                ? <span className="text-amber-400">Your account must be verified by an admin first.</span>
+                : <button onClick={openModal} className="text-emerald-400 hover:text-emerald-300 underline">Create your first listing →</button>
+              }
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -205,9 +239,10 @@ export default function SellerDashboard() {
                   <tr>
                     <td colSpan={7} className="px-6 py-16 text-center text-slate-500">
                       No listings yet.{" "}
-                      <button onClick={openModal} className="text-emerald-400 hover:text-emerald-300 underline">
-                        Create your first listing →
-                      </button>
+                      {verified === false
+                        ? <span className="text-amber-400">Your account must be verified by an admin first.</span>
+                        : <button onClick={openModal} className="text-emerald-400 hover:text-emerald-300 underline">Create your first listing →</button>
+                      }
                     </td>
                   </tr>
                 )}

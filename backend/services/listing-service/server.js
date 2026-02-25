@@ -54,6 +54,11 @@ app.post("/listings", async (req, res) => {
         .status(403)
         .json({ error: "Only sellers can create listings" });
     }
+    if (!user.sellerVerified) {
+      return res
+        .status(403)
+        .json({ error: "Your seller account must be verified by an admin before you can create listings" });
+    }
 
     const { title, species, type, price } = req.body;
     if (!title || !species || !type || price == null) {
