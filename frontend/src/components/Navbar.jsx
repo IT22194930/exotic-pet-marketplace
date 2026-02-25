@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { isAuthenticated, getRole } from "./utils/auth";
+import { isAuthenticated, getRole } from "../utils/auth";
 
 export default function Navbar() {
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());

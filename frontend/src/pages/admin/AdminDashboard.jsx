@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { getAuthUser } from "./utils/auth";
+import { useState, useEffect } from "react";
+import { getAuthUser } from "../../utils/auth";
 
 const IDENTITY_URL = import.meta.env.VITE_IDENTITY_SERVICE_URL;
 

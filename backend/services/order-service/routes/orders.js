@@ -66,6 +66,7 @@ router.post("/", async (req, res) => {
          .insert([{
             buyer_id: user.id,
             listing_id: listingId,
+            title: listing.title || null,
             species: listing.species || null,
             price: Number(listing.price || 0),
             status,
@@ -79,7 +80,7 @@ router.post("/", async (req, res) => {
       return res.status(201).json({
          message: status === "created" ? "Order created" : "Order rejected",
          order,
-         listing: { id: listingId, species: listing.species, price: listing.price },
+         listing: { id: listingId, title: listing.title, species: listing.species, price: listing.price },
          compliance,
       });
    } catch (err) {
