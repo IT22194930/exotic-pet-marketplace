@@ -33,7 +33,7 @@ async function getMe(authHeader) {
   const r = await axios.get(`${IDENTITY_URL}/users/me`, {
     headers: { Authorization: authHeader }
   });
-  return r.data; // {id,email,role,sellerVerified}
+  return r.data;
 }
 
 // --- helper: fetch listing via Listing Service
