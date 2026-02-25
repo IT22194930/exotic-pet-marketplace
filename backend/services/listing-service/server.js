@@ -3,9 +3,11 @@ const express = require("express");
 const axios = require("axios");
 const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const PORT = process.env.PORT || 8002;
 const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
@@ -51,6 +53,11 @@ app.post("/listings", async (req, res) => {
       return res
         .status(403)
         .json({ error: "Only sellers can create listings" });
+    }
+    if (!user.sellerVerified) {
+      return res
+        .status(403)
+        .json({ error: "Your seller account must be verified by an admin before you can create listings" });
     }
 
     const { title, species, type, price } = req.body;

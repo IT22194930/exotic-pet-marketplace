@@ -16,8 +16,12 @@
     "nodemon": "^3.1.9"
   },
   "dependencies": {
-    "dotenv": "^16.4.7",
+    "@supabase/supabase-js": "^2.97.0",
     "axios": "^1.13.5",
-    "express": "^5.2.1"
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   }
 }

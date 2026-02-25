@@ -3,9 +3,11 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { createClient } = require("@supabase/supabase-js");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const PORT = process.env.PORT || 8001;
 const JWT_SECRET =
@@ -172,6 +174,43 @@ app.patch("/sellers/:id/verify", authMiddleware, async (req, res) => {
       sellerVerified: updated.seller_verified,
     },
   });
+});
+
+// ✅ Admin: list all users
+app.get("/users", authMiddleware, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Admin only" });
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id,email,role,seller_verified,created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) return res.status(500).json({ error: "DB error", details: error.message });
+  res.json({ count: data.length, users: data });
+});
+
+// ✅ Admin: update user role
+app.patch("/users/:id/role", authMiddleware, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Admin only" });
+  }
+
+  const { role } = req.body;
+  if (!["buyer", "seller", "admin"].includes(role)) {
+    return res.status(400).json({ error: "role must be buyer/seller/admin" });
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .update({ role })
+    .eq("id", req.params.id)
+    .select("id,email,role,seller_verified")
+    .single();
+
+  if (error || !data) return res.status(404).json({ error: "User not found" });
+  res.json({ message: "Role updated", user: data });
 });
 
 app.listen(PORT, () => console.log(`identity-service running on port ${PORT}`));
