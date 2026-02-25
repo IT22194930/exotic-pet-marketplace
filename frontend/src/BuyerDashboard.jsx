@@ -118,6 +118,7 @@ export default function BuyerDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.07] text-[0.72rem] uppercase tracking-widest text-slate-500">
+                  <th className="text-left px-6 py-4">Title</th>
                   <th className="text-left px-6 py-4">Species</th>
                   <th className="text-left px-6 py-4">Price</th>
                   <th className="text-left px-6 py-4">Status</th>
@@ -129,7 +130,7 @@ export default function BuyerDashboard() {
               <tbody>
                 {orders.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-16 text-center text-slate-500">
+                    <td colSpan={7} className="px-6 py-16 text-center text-slate-500">
                       No orders yet.{" "}
                       <a href="/shop" className="text-emerald-400 hover:text-emerald-300 underline">
                         Browse the Shop →
@@ -139,7 +140,8 @@ export default function BuyerDashboard() {
                 ) : (
                   orders.map((o) => (
                     <tr key={o.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                      <td className="px-6 py-4 font-semibold text-slate-100 capitalize">{o.species || "—"}</td>
+                      <td className="px-6 py-4 font-semibold text-slate-100">{o.title || "—"}</td>
+                      <td className="px-6 py-4 text-slate-300 capitalize">{o.species || "—"}</td>
                       <td className="px-6 py-4 text-emerald-400 font-semibold">
                         {o.price != null ? `$${Number(o.price).toLocaleString()}` : "—"}
                       </td>
