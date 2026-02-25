@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 
 // Initialise Supabase (validates env vars at startup)
 require("./config/supabase");
@@ -9,6 +10,7 @@ const notifyRoutes = require("./routes/notify");
 const auditRoutes = require("./routes/audit");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 8004;
