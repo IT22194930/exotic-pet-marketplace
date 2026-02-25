@@ -9,7 +9,8 @@ const router = Router();
 /** Require an authenticated admin; throws on failure. */
 async function requireAdmin(authHeader) {
   const user = await getUserFromToken(authHeader);
-  if (user.role !== "admin") throw Object.assign(new Error("Admin only"), { status: 403 });
+  if (user.role !== "admin")
+    throw Object.assign(new Error("Admin only"), { status: 403 });
   return user;
 }
 
@@ -28,7 +29,8 @@ router.get("/orders/:orderId", async (req, res) => {
     .eq("order_id", orderId)
     .order("created_at", { ascending: true });
 
-  if (error) return res.status(500).json({ error: "DB error", details: error.message });
+  if (error)
+    return res.status(500).json({ error: "DB error", details: error.message });
 
   res.json({ orderId, count: data.length, logs: data });
 });
@@ -47,9 +49,9 @@ router.get("/orders/:orderId", async (req, res) => {
 router.get("/logs", async (req, res) => {
   const { action, order_id, from, to } = req.query;
   const limit = Math.min(parseInt(req.query.limit) || 50, 200);
-  const page  = Math.max(parseInt(req.query.page)  || 1,  1);
+  const page = Math.max(parseInt(req.query.page) || 1, 1);
   const from_ = (page - 1) * limit;
-  const to_   = from_ + limit - 1;
+  const to_ = from_ + limit - 1;
 
   let query = supabase
     .from("audit_logs")
@@ -57,14 +59,15 @@ router.get("/logs", async (req, res) => {
     .order("created_at", { ascending: false })
     .range(from_, to_);
 
-  if (action)   query = query.eq("action",   action);
+  if (action) query = query.eq("action", action);
   if (order_id) query = query.eq("order_id", order_id);
-  if (from)     query = query.gte("created_at", from);
-  if (to)       query = query.lte("created_at", to);
+  if (from) query = query.gte("created_at", from);
+  if (to) query = query.lte("created_at", to);
 
   const { data, error, count } = await query;
 
-  if (error) return res.status(500).json({ error: "DB error", details: error.message });
+  if (error)
+    return res.status(500).json({ error: "DB error", details: error.message });
 
   res.json({
     total: count,
@@ -80,11 +83,10 @@ router.get("/logs", async (req, res) => {
  * Returns the distinct action types present in the audit log.
  */
 router.get("/logs/actions", async (req, res) => {
-  const { data, error } = await supabase
-    .from("audit_logs")
-    .select("action");
+  const { data, error } = await supabase.from("audit_logs").select("action");
 
-  if (error) return res.status(500).json({ error: "DB error", details: error.message });
+  if (error)
+    return res.status(500).json({ error: "DB error", details: error.message });
 
   const actions = [...new Set(data.map((r) => r.action))].sort();
   res.json({ count: actions.length, actions });
@@ -95,11 +97,10 @@ router.get("/logs/actions", async (req, res) => {
  * Count of each action type — useful for dashboards.
  */
 router.get("/stats", async (req, res) => {
-  const { data, error } = await supabase
-    .from("audit_logs")
-    .select("action");
+  const { data, error } = await supabase.from("audit_logs").select("action");
 
-  if (error) return res.status(500).json({ error: "DB error", details: error.message });
+  if (error)
+    return res.status(500).json({ error: "DB error", details: error.message });
 
   const stats = data.reduce((acc, row) => {
     acc[row.action] = (acc[row.action] || 0) + 1;
@@ -129,9 +130,13 @@ router.delete("/orders/:orderId", async (req, res) => {
     .delete({ count: "exact" })
     .eq("order_id", orderId);
 
-  if (error) return res.status(500).json({ error: "DB error", details: error.message });
+  if (error)
+    return res.status(500).json({ error: "DB error", details: error.message });
 
-  res.json({ message: `Deleted audit logs for order ${orderId}`, deleted: count });
+  res.json({
+    message: `Deleted audit logs for order ${orderId}`,
+    deleted: count,
+  });
 });
 
 /**
@@ -151,19 +156,21 @@ router.delete("/logs", async (req, res) => {
 
   if (!action && !from && !to) {
     return res.status(400).json({
-      error: "At least one filter (action, from, to) is required for bulk delete",
+      error:
+        "At least one filter (action, from, to) is required for bulk delete",
     });
   }
 
   let query = supabase.from("audit_logs").delete({ count: "exact" });
 
-  if (action) query = query.eq("action",     action);
-  if (from)   query = query.gte("created_at", from);
-  if (to)     query = query.lte("created_at", to);
+  if (action) query = query.eq("action", action);
+  if (from) query = query.gte("created_at", from);
+  if (to) query = query.lte("created_at", to);
 
   const { error, count } = await query;
 
-  if (error) return res.status(500).json({ error: "DB error", details: error.message });
+  if (error)
+    return res.status(500).json({ error: "DB error", details: error.message });
 
   res.json({ message: "Bulk delete complete", deleted: count });
 });
