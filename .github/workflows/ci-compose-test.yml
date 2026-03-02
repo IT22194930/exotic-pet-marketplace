@@ -1,0 +1,48 @@
+name: CI - Docker Compose Health Test
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  compose-health-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create .env file for CI
+        run: |
+          cat > backend/.env << 'EOF'
+          JWT_SECRET=ci-secret
+          SUPABASE_URL=https://example.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY=dummy
+          SUPABASE_BUCKET=listing-images
+          EOF
+
+      - name: Build and start services
+        working-directory: backend
+        run: |
+          docker compose up -d --build
+
+      - name: Wait for services
+        run: sleep 10
+
+      - name: Health checks
+        run: |
+          curl -f http://localhost:8001/health
+          curl -f http://localhost:8002/health
+          curl -f http://localhost:8003/health
+          curl -f http://localhost:8004/health
+
+      - name: Logs on failure
+        if: failure()
+        working-directory: backend
+        run: docker compose logs
+
+      - name: Shutdown
+        if: always()
+        working-directory: backend
+        run: docker compose down
