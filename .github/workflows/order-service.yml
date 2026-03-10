@@ -59,9 +59,9 @@ jobs:
           args: --file=backend/services/order-service/package.json --severity-threshold=high --sarif-file-output=snyk.sarif
 
       - name: Upload Snyk report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
-        if: always()
+        if: always() && hashFiles('snyk.sarif') != ''
         with:
           sarif_file: snyk.sarif
 
