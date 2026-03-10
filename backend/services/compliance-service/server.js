@@ -39,7 +39,7 @@ startConsumer(
     switch (eventType) {
       // ── Order events ──────────────────────────────────────────────────────
       case "order.placed":
-        await audit(payload.orderId, "ORDER_PLACED", {
+        await audit("order", payload.orderId, "ORDER_PLACED", {
           buyerId: payload.buyerId,
           listingId: payload.listingId,
           species: payload.species,
@@ -73,7 +73,7 @@ startConsumer(
         break;
 
       case "order.cancelled":
-        await audit(payload.orderId, "ORDER_CANCELLED", {
+        await audit("order", payload.orderId, "ORDER_CANCELLED", {
           buyerId: payload.buyerId,
           listingId: payload.listingId,
         });
@@ -81,21 +81,21 @@ startConsumer(
 
       // ── User events ───────────────────────────────────────────────────────
       case "user.registered":
-        await audit(payload.userId, "USER_REGISTERED", {
+        await audit("user", payload.userId, "USER_REGISTERED", {
           email: payload.email,
           role: payload.role,
         });
         break;
 
       case "seller.verified":
-        await audit(payload.sellerId, "SELLER_VERIFIED", {
+        await audit("seller", payload.sellerId, "SELLER_VERIFIED", {
           email: payload.email,
         });
         break;
 
       // ── Listing events ────────────────────────────────────────────────────
       case "listing.created":
-        await audit(payload.listingId, "LISTING_CREATED", {
+        await audit("listing", payload.listingId, "LISTING_CREATED", {
           sellerId: payload.sellerId,
           title: payload.title,
           species: payload.species,
@@ -104,7 +104,7 @@ startConsumer(
         break;
 
       case "listing.deleted":
-        await audit(payload.listingId, "LISTING_DELETED", {
+        await audit("listing", payload.listingId, "LISTING_DELETED", {
           sellerId: payload.sellerId,
         });
         break;

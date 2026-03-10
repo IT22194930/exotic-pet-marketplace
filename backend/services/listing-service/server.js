@@ -51,6 +51,7 @@ startConsumer(
       }
     }
   },
-).catch((err) =>
-  console.error("[kafka] listing-service consumer error:", err.message),
-);
+).catch((err) => {
+  console.error("[kafka] listing-service consumer error:", err.message);
+  process.exit(1);
+});

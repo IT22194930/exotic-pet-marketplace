@@ -11,6 +11,24 @@ const COMPLIANCE_URL =
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// Rejects after ms milliseconds with a descriptive error
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            Object.assign(new Error(`${label} timed out after ${ms}ms`), {
+              isTimeout: true,
+            }),
+          ),
+        ms,
+      ),
+    ),
+  ]);
+}
+
 async function getMe(authHeader) {
   if (!authHeader?.startsWith("Bearer "))
     throw new Error("Missing Bearer token");
@@ -26,14 +44,10 @@ async function getListing(listingId) {
 }
 
 async function checkCompliance(authHeader, payload) {
-  try {
-    const r = await axios.post(`${COMPLIANCE_URL}/compliance/check`, payload, {
-      headers: { Authorization: authHeader },
-    });
-    return r.data;
-  } catch (e) {
-    return { allowed: true, reason: "Compliance skipped/unavailable" };
-  }
+  const r = await axios.post(`${COMPLIANCE_URL}/compliance/check`, payload, {
+    headers: { Authorization: authHeader },
+  });
+  return r.data;
 }
 
 // ── Route handlers ────────────────────────────────────────────────────────────
@@ -48,8 +62,12 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "listingId is required" });
 
   try {
-    const user = await getMe(authHeader);
-    const listing = await getListing(listingId);
+    const user = await withTimeout(getMe(authHeader), 5000, "getMe");
+    const listing = await withTimeout(
+      getListing(listingId),
+      5000,
+      "getListing",
+    );
 
     if (listing.status && listing.status !== "available") {
       return res
@@ -58,11 +76,15 @@ router.post("/", async (req, res) => {
     }
 
     const sellerId = listing.seller_id || listing.sellerId;
-    const compliance = await checkCompliance(authHeader, {
-      orderId: "00000000-0000-0000-0000-000000000000",
-      species: listing.species,
-      sellerId,
-    });
+    const compliance = await withTimeout(
+      checkCompliance(authHeader, {
+        orderId: "00000000-0000-0000-0000-000000000000",
+        species: listing.species,
+        sellerId,
+      }),
+      5000,
+      "checkCompliance",
+    );
 
     const status = compliance.allowed ? "created" : "rejected";
     const reason = compliance.allowed ? null : compliance.reason;
@@ -117,7 +139,33 @@ router.post("/", async (req, res) => {
       compliance,
     });
   } catch (err) {
-    return res.status(401).json({
+    if (err.isTimeout) {
+      return res
+        .status(504)
+        .json({ error: "Gateway timeout", details: err.message });
+    }
+    const status = err.response?.status;
+    if (status === 404) {
+      return res
+        .status(404)
+        .json({
+          error: "Listing not found",
+          details: err.response?.data || err.message,
+        });
+    }
+    if (
+      status === 401 ||
+      status === 403 ||
+      err.message === "Missing Bearer token"
+    ) {
+      return res
+        .status(401)
+        .json({
+          error: "Unauthorized",
+          details: err.response?.data || err.message,
+        });
+    }
+    return res.status(status || 500).json({
       error: "Order failed",
       details: err.response?.data || err.message,
     });
@@ -144,12 +192,10 @@ router.get("/my", async (req, res) => {
         .json({ error: "DB error", details: error.message });
     res.json({ count: data.length, orders: data });
   } catch (err) {
-    res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message,
-      });
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
   }
 });
 
@@ -218,17 +264,56 @@ router.patch("/:id/cancel", async (req, res) => {
   }
 });
 
-// GET /orders/:id — single order by id
+// GET /orders/:id — single order by id (authenticated, owner or admin only)
 router.get("/:id", async (req, res) => {
+  const authHeader = req.headers.authorization;
   const supabase = req.app.locals.supabase;
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("id", req.params.id)
-    .single();
 
-  if (error || !data) return res.status(404).json({ error: "Order not found" });
-  res.json(data);
+  try {
+    const user = await withTimeout(getMe(authHeader), 5000, "getMe");
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+
+    if (error || !data)
+      return res.status(404).json({ error: "Order not found" });
+
+    const isOwner = data.buyer_id === user.id || data.seller_id === user.id;
+    const isAdmin = user.role === "admin";
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    res.json(data);
+  } catch (err) {
+    if (err.isTimeout) {
+      return res
+        .status(504)
+        .json({ error: "Gateway timeout", details: err.message });
+    }
+    const status = err.response?.status;
+    if (
+      status === 401 ||
+      status === 403 ||
+      err.message === "Missing Bearer token"
+    ) {
+      return res
+        .status(401)
+        .json({
+          error: "Unauthorized",
+          details: err.response?.data || err.message,
+        });
+    }
+    return res
+      .status(status || 500)
+      .json({
+        error: "Request failed",
+        details: err.response?.data || err.message,
+      });
+  }
 });
 
 module.exports = router;

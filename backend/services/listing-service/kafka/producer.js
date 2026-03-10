@@ -8,6 +8,7 @@ const kafka = new Kafka({
 
 const producer = kafka.producer();
 let ready = false;
+let connectionPromise = null;
 
 /**
  * Publish an event to a Kafka topic.
@@ -17,8 +18,10 @@ let ready = false;
  */
 async function publish(topic, eventType, payload) {
   if (!ready) {
-    await producer.connect();
+    connectionPromise = connectionPromise || producer.connect();
+    await connectionPromise;
     ready = true;
+    connectionPromise = null;
     console.log("[kafka] listing-service producer connected");
   }
   await producer.send({

@@ -63,7 +63,7 @@
                 "header": [{ "key": "Content-Type", "value": "application/json" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"liyanage.nadil@gmail.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"buyer\"\n}"
+                  "raw": "{\n  \"email\": \"buyer@example.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"buyer\"\n}"
                 }
               }
             },
@@ -109,7 +109,7 @@
                 "header": [{ "key": "Content-Type", "value": "application/json" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"liyanage.nadil@gmail.com\",\n  \"password\": \"Password123!\"\n}"
+                  "raw": "{\n  \"email\": \"buyer@example.com\",\n  \"password\": \"Password123!\"\n}"
                 }
               }
             },
@@ -465,7 +465,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Parrot\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"liyanage.nadil@gmail.com\"\n}"
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Parrot\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"buyer@example.com\"\n}"
                 }
               }
             },
@@ -480,7 +480,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"liyanage.nadil@gmail.com\"\n}"
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"buyer@example.com\"\n}"
                 }
               }
             },
@@ -495,7 +495,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"liyanage.nadil@gmail.com\"\n}"
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"buyer@example.com\"\n}"
                 }
               }
             },
@@ -510,7 +510,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"channel\": \"email\",\n  \"recipient\": \"liyanage.nadil@gmail.com\",\n  \"message\": \"Your order has been confirmed via the API Gateway!\"\n}"
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"channel\": \"email\",\n  \"recipient\": \"buyer@example.com\",\n  \"message\": \"Your order has been confirmed via the API Gateway!\"\n}"
                 }
               }
             },
@@ -614,7 +614,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"liyanage.nadil@gmail.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"buyer\"\n}"
+              "raw": "{\n  \"email\": \"buyer@example.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"buyer\"\n}"
             }
           }
         },
@@ -659,7 +659,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"liyanage.nadil@gmail.com\",\n  \"password\": \"Password123!\"\n}"
+              "raw": "{\n  \"email\": \"buyer@example.com\",\n  \"password\": \"Password123!\"\n}"
             }
           }
         },
@@ -949,7 +949,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Parrot\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"liyanage.nadil@gmail.com\"\n}"
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Parrot\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"buyer@example.com\"\n}"
                 }
               }
             },
@@ -964,7 +964,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"liyanage.nadil@gmail.com\"\n}"
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"buyer@example.com\"\n}"
                 }
               }
             },
@@ -979,7 +979,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"liyanage.nadil@gmail.com\"\n}"
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"species\": \"Komodo Dragon\",\n  \"sellerId\": \"seller-001\",\n  \"buyerEmail\": \"buyer@example.com\"\n}"
                 }
               }
             },
@@ -1027,7 +1027,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"channel\": \"email\",\n  \"recipient\": \"liyanage.nadil@gmail.com\",\n  \"message\": \"Your order has been confirmed!\"\n}"
+                  "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"channel\": \"email\",\n  \"recipient\": \"buyer@example.com\",\n  \"message\": \"Your order has been confirmed!\"\n}"
                 }
               }
             },

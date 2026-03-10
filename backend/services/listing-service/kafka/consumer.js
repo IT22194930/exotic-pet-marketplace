@@ -29,16 +29,9 @@ async function startConsumer(groupId, topics, onMessage) {
 
       await consumer.run({
         eachMessage: async ({ topic, message }) => {
-          try {
-            const eventType = message.key?.toString();
-            const payload = JSON.parse(message.value.toString());
-            await onMessage(topic, eventType, payload);
-          } catch (err) {
-            console.error(
-              `[kafka] Error processing message from "${topic}":`,
-              err.message,
-            );
-          }
+          const eventType = message.key?.toString();
+          const payload = JSON.parse(message.value.toString());
+          await onMessage(topic, eventType, payload);
         },
       });
 
@@ -50,7 +43,9 @@ async function startConsumer(groupId, topics, onMessage) {
       console.warn(
         `[kafka] Attempt ${attempt}/15 failed (${err.message}), retrying in ${attempt * 3000}ms…`,
       );
-      try { await consumer.disconnect(); } catch {}
+      try {
+        await consumer.disconnect();
+      } catch {}
       if (attempt === 15) throw err;
       await new Promise((r) => setTimeout(r, attempt * 3000));
     }

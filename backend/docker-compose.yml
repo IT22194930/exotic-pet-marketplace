@@ -103,12 +103,12 @@ services:
     command: npm run dev
     environment:
       - PORT=8001
-      - JWT_SECRET=CN4vbU9nRdi1ubOq5a1IYcw5WBvi7FfTz8iqC8ojWGA
+      - JWT_SECRET=${JWT_SECRET}
       - COMPLIANCE_URL=http://compliance-service:8004
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=identity-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
-      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBscnV1enViZnVsY2NyaW9wZ2dzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTg0MTA5MSwiZXhwIjoyMDg3NDE3MDkxfQ.hr6sewqiwCtdXTiul3SxkKrwJ33i0BCs4Am7Wrp3siI
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     networks:
       - marketplace-net
 
@@ -130,7 +130,7 @@ services:
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=listing-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
-      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBscnV1enViZnVsY2NyaW9wZ2dzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTg0MTA5MSwiZXhwIjoyMDg3NDE3MDkxfQ.hr6sewqiwCtdXTiul3SxkKrwJ33i0BCs4Am7Wrp3siI
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - SUPABASE_BUCKET=listing-images
     networks:
       - marketplace-net
@@ -155,7 +155,7 @@ services:
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=order-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
-      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBscnV1enViZnVsY2NyaW9wZ2dzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTg0MTA5MSwiZXhwIjoyMDg3NDE3MDkxfQ.hr6sewqiwCtdXTiul3SxkKrwJ33i0BCs4Am7Wrp3siI
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     networks:
       - marketplace-net
 
@@ -177,12 +177,12 @@ services:
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=compliance-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
-      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBscnV1enViZnVsY2NyaW9wZ2dzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTg0MTA5MSwiZXhwIjoyMDg3NDE3MDkxfQ.hr6sewqiwCtdXTiul3SxkKrwJ33i0BCs4Am7Wrp3siI
-      - SMTP_HOST=smtp.gmail.com
-      - SMTP_PORT=587
-      - SMTP_USER=nadilsenrukabk@gmail.com
-      - SMTP_PASS=vshk rika bxxt enoc
-      - SMTP_FROM=Exotic Pet Marketplace <nadilsenrukabk@gmail.com>
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
     networks:
       - marketplace-net
 

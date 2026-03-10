@@ -97,6 +97,7 @@ export default function AdminNotifySection() {
       setResult(data);
       setHistory((prev) => [
         {
+          id: `${form.orderId}-${Date.now()}`,
           orderId: form.orderId,
           channel: form.channel,
           recipient: form.recipient,
@@ -183,10 +184,17 @@ export default function AdminNotifySection() {
 
           {/* Channel selector */}
           <div>
-            <label className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-2">
+            <label
+              id="delivery-channel-label"
+              className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-2"
+            >
               Delivery Channel
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div
+              role="group"
+              aria-labelledby="delivery-channel-label"
+              className="grid grid-cols-3 gap-2"
+            >
               {CHANNEL_OPTIONS.map((ch) => {
                 const colors = CHANNEL_COLORS[ch.color];
                 const active = form.channel === ch.value;
@@ -246,7 +254,10 @@ export default function AdminNotifySection() {
           {/* Message */}
           <div>
             <div className="flex items-baseline justify-between mb-1.5">
-              <label className="text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
+              <label
+                htmlFor="message"
+                className="text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600"
+              >
                 Message
               </label>
               <span
@@ -256,6 +267,7 @@ export default function AdminNotifySection() {
               </span>
             </div>
             <textarea
+              id="message"
               name="message"
               value={form.message}
               onChange={handleChange}
@@ -389,16 +401,16 @@ export default function AdminNotifySection() {
                 Session History
               </p>
               <div className="space-y-2">
-                {history.map((h, i) => (
+                {history.map((h) => (
                   <div
-                    key={i}
+                    key={h.id}
                     className="flex items-center justify-between gap-3 py-1.5 border-b border-white/[0.04] last:border-0"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span
-                        className={`text-xs ${h.emailSent !== false ? "text-emerald-400" : "text-amber-400"}`}
+                        className={`text-xs ${Boolean(h.emailSent) ? "text-emerald-400" : "text-amber-400"}`}
                       >
-                        {h.emailSent !== false ? "✓" : "⚠"}
+                        {Boolean(h.emailSent) ? "✓" : "⚠"}
                       </span>
                       <span className="text-slate-400 text-[0.65rem] font-mono shrink-0 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded-md">
                         {h.channel}

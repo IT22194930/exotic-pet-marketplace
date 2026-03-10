@@ -65,7 +65,7 @@ app.get("/health", async (req, res) => {
   const allOk = statuses.every((s) => s.status === "ok");
   res.status(allOk ? 200 : 503).json({
     gateway: "api-gateway",
-    status: "ok",
+    status: allOk ? "ok" : "degraded",
     timestamp: new Date().toISOString(),
     services: statuses,
   });
@@ -78,14 +78,14 @@ app.get("/", (req, res) => {
     version: "1.0.0",
     port: PORT,
     routes: [
-      { prefix: "/auth  (or /api/auth)",       upstream: IDENTITY_URL },
-      { prefix: "/users  (or /api/users)",       upstream: IDENTITY_URL },
-      { prefix: "/sellers  (or /api/sellers)",   upstream: IDENTITY_URL },
+      { prefix: "/auth  (or /api/auth)", upstream: IDENTITY_URL },
+      { prefix: "/users  (or /api/users)", upstream: IDENTITY_URL },
+      { prefix: "/sellers  (or /api/sellers)", upstream: IDENTITY_URL },
       { prefix: "/listings  (or /api/listings)", upstream: LISTING_URL },
-      { prefix: "/orders  (or /api/orders)",     upstream: ORDER_URL },
+      { prefix: "/orders  (or /api/orders)", upstream: ORDER_URL },
       { prefix: "/compliance  (or /api/compliance)", upstream: COMPLIANCE_URL },
-      { prefix: "/notify  (or /api/notify)",     upstream: COMPLIANCE_URL },
-      { prefix: "/audit  (or /api/audit)",       upstream: COMPLIANCE_URL },
+      { prefix: "/notify  (or /api/notify)", upstream: COMPLIANCE_URL },
+      { prefix: "/audit  (or /api/audit)", upstream: COMPLIANCE_URL },
     ],
   });
 });
@@ -117,28 +117,31 @@ function makeProxy(target, mountPath, upstreamPrefix) {
 // Both /api/<path> and /<path> are accepted so clients can use either form.
 
 // Identity Service
-app.use("/api/auth",    makeProxy(IDENTITY_URL,   "/api/auth",    "/auth"));
-app.use("/api/users",   makeProxy(IDENTITY_URL,   "/api/users",   "/users"));
-app.use("/api/sellers", makeProxy(IDENTITY_URL,   "/api/sellers", "/sellers"));
-app.use("/auth",        makeProxy(IDENTITY_URL,   "/auth",        "/auth"));
-app.use("/users",       makeProxy(IDENTITY_URL,   "/users",       "/users"));
-app.use("/sellers",     makeProxy(IDENTITY_URL,   "/sellers",     "/sellers"));
+app.use("/api/auth", makeProxy(IDENTITY_URL, "/api/auth", "/auth"));
+app.use("/api/users", makeProxy(IDENTITY_URL, "/api/users", "/users"));
+app.use("/api/sellers", makeProxy(IDENTITY_URL, "/api/sellers", "/sellers"));
+app.use("/auth", makeProxy(IDENTITY_URL, "/auth", "/auth"));
+app.use("/users", makeProxy(IDENTITY_URL, "/users", "/users"));
+app.use("/sellers", makeProxy(IDENTITY_URL, "/sellers", "/sellers"));
 
 // Listing Service
 app.use("/api/listings", makeProxy(LISTING_URL, "/api/listings", "/listings"));
-app.use("/listings",     makeProxy(LISTING_URL, "/listings",     "/listings"));
+app.use("/listings", makeProxy(LISTING_URL, "/listings", "/listings"));
 
 // Order Service
 app.use("/api/orders", makeProxy(ORDER_URL, "/api/orders", "/orders"));
-app.use("/orders",     makeProxy(ORDER_URL, "/orders",     "/orders"));
+app.use("/orders", makeProxy(ORDER_URL, "/orders", "/orders"));
 
 // Compliance Service
-app.use("/api/compliance", makeProxy(COMPLIANCE_URL, "/api/compliance", "/compliance"));
-app.use("/api/notify",     makeProxy(COMPLIANCE_URL, "/api/notify",     "/notify"));
-app.use("/api/audit",      makeProxy(COMPLIANCE_URL, "/api/audit",      "/audit"));
-app.use("/compliance",     makeProxy(COMPLIANCE_URL, "/compliance",     "/compliance"));
-app.use("/notify",         makeProxy(COMPLIANCE_URL, "/notify",         "/notify"));
-app.use("/audit",          makeProxy(COMPLIANCE_URL, "/audit",          "/audit"));
+app.use(
+  "/api/compliance",
+  makeProxy(COMPLIANCE_URL, "/api/compliance", "/compliance"),
+);
+app.use("/api/notify", makeProxy(COMPLIANCE_URL, "/api/notify", "/notify"));
+app.use("/api/audit", makeProxy(COMPLIANCE_URL, "/api/audit", "/audit"));
+app.use("/compliance", makeProxy(COMPLIANCE_URL, "/compliance", "/compliance"));
+app.use("/notify", makeProxy(COMPLIANCE_URL, "/notify", "/notify"));
+app.use("/audit", makeProxy(COMPLIANCE_URL, "/audit", "/audit"));
 
 // ── 404 fallthrough ───────────────────────────────────────────────────────────
 app.use((req, res) => {

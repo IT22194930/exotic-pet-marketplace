@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const COMPLIANCE_URL = import.meta.env.VITE_COMPLIANCE_SERVICE_URL;
 
@@ -54,14 +54,16 @@ function getColor(action) {
 // ── Relative time helper ─────────────────────────────────────────────────────
 function relativeTime(iso) {
   if (!iso) return "—";
-  const diff = Date.now() - new Date(iso).getTime();
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  const diff = Date.now() - d.getTime();
   const s = Math.floor(diff / 1000);
   if (s < 60) return `${s}s ago`;
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
-  return new Date(iso).toLocaleDateString();
+  return d.toLocaleDateString();
 }
 
 // ── ActionBadge ──────────────────────────────────────────────────────────────
@@ -119,13 +121,34 @@ function DetailCell({ details }) {
 
 // ── Delete confirmation modal ────────────────────────────────────────────────
 function DeleteModal({ orderId, onConfirm, onCancel, loading }) {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const prev = document.activeElement;
+    modalRef.current?.focus();
+    const handleKey = (e) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      prev?.focus();
+    };
+  }, [onCancel]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onCancel}
       />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-red-500/20 bg-[#0f1a2e] p-6 shadow-[0_24px_64px_rgba(0,0,0,0.6)]">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+        className="relative z-10 w-full max-w-sm rounded-2xl border border-red-500/20 bg-[#0f1a2e] p-6 shadow-[0_24px_64px_rgba(0,0,0,0.6)] focus:outline-none"
+      >
         <div className="flex items-start gap-4 mb-5">
           <span className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 text-lg shrink-0">
             ⚠
@@ -422,10 +445,14 @@ export default function AdminAuditSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-3">
             {/* Action */}
             <div>
-              <label className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5">
+              <label
+                htmlFor="filter-action"
+                className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5"
+              >
                 Action
               </label>
               <select
+                id="filter-action"
                 value={action}
                 onChange={(e) => setAction(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-slate-200 text-sm focus:outline-none focus:border-sky-500/50 transition-all cursor-pointer"
@@ -443,10 +470,14 @@ export default function AdminAuditSection() {
 
             {/* Order ID */}
             <div>
-              <label className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5">
+              <label
+                htmlFor="filter-order-id"
+                className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5"
+              >
                 Order ID
               </label>
               <input
+                id="filter-order-id"
                 type="text"
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
@@ -457,10 +488,14 @@ export default function AdminAuditSection() {
 
             {/* From */}
             <div>
-              <label className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5">
+              <label
+                htmlFor="filter-from"
+                className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5"
+              >
                 From
               </label>
               <input
+                id="filter-from"
                 type="datetime-local"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
@@ -470,10 +505,14 @@ export default function AdminAuditSection() {
 
             {/* To */}
             <div>
-              <label className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5">
+              <label
+                htmlFor="filter-to"
+                className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5"
+              >
                 To
               </label>
               <input
+                id="filter-to"
                 type="datetime-local"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}

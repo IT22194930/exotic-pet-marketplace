@@ -289,7 +289,7 @@ export default function AdminComplianceSection() {
                 <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07]">
                   <span className="text-sky-400 text-sm">✉</span>
                   <p className="text-xs text-slate-400">
-                    Notification sent to{" "}
+                    Notification requested for{" "}
                     <span className="text-slate-200 font-medium">
                       {form.buyerEmail}
                     </span>
@@ -322,9 +322,9 @@ export default function AdminComplianceSection() {
                 Session History
               </p>
               <div className="space-y-2">
-                {history.map((h, i) => (
+                {history.map((h) => (
                   <div
-                    key={i}
+                    key={`${h.orderId}-${h.checkedAt.getTime()}`}
                     className="flex items-center justify-between gap-3 py-1.5 border-b border-white/[0.04] last:border-0"
                   >
                     <div className="flex items-center gap-2 min-w-0">
