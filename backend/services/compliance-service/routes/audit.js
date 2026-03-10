@@ -14,6 +14,15 @@ async function requireAdmin(authHeader) {
   return user;
 }
 
+/** Apply the standard query filters to any audit_logs Supabase query. */
+function applyFilters(query, { action, order_id, from, to }) {
+  if (action) query = query.eq("action", action);
+  if (order_id) query = query.eq("order_id", order_id);
+  if (from) query = query.gte("created_at", from);
+  if (to) query = query.lte("created_at", to);
+  return query;
+}
+
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 /**
@@ -48,34 +57,46 @@ router.get("/orders/:orderId", async (req, res) => {
  */
 router.get("/logs", async (req, res) => {
   const { action, order_id, from, to } = req.query;
+  const filters = { action, order_id, from, to };
   const limit = Math.min(parseInt(req.query.limit) || 50, 200);
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const from_ = (page - 1) * limit;
   const to_ = from_ + limit - 1;
 
-  let query = supabase
-    .from("audit_logs")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(from_, to_);
+  // ── 1. Count-only query (no range, so it never throws PGRST103) ──
+  const { count, error: countErr } = await applyFilters(
+    supabase.from("audit_logs").select("*", { count: "exact", head: true }),
+    filters,
+  );
 
-  if (action) query = query.eq("action", action);
-  if (order_id) query = query.eq("order_id", order_id);
-  if (from) query = query.gte("created_at", from);
-  if (to) query = query.lte("created_at", to);
+  if (countErr)
+    return res
+      .status(500)
+      .json({ error: "DB error", details: countErr.message });
 
-  const { data, error, count } = await query;
+  const total = count ?? 0;
+  const pages = Math.max(1, Math.ceil(total / limit));
 
-  if (error)
-    return res.status(500).json({ error: "DB error", details: error.message });
+  // ── 2. Data query — only if the requested range has rows ──
+  let logs = [];
+  if (from_ < total) {
+    const { data, error } = await applyFilters(
+      supabase
+        .from("audit_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(from_, Math.min(to_, total - 1)),
+      filters,
+    );
 
-  res.json({
-    total: count,
-    page,
-    limit,
-    pages: Math.ceil(count / limit),
-    logs: data,
-  });
+    if (error)
+      return res
+        .status(500)
+        .json({ error: "DB error", details: error.message });
+    logs = data;
+  }
+
+  res.json({ total, page, limit, pages, logs });
 });
 
 /**

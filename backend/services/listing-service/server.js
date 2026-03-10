@@ -3,6 +3,7 @@ const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
 const cors = require("cors");
 const listingRoutes = require("./routes/listings");
+const { startConsumer } = require("./kafka/consumer");
 
 const app = express();
 app.use(express.json());
@@ -29,3 +30,28 @@ app.get("/health", (req, res) => {
 app.use("/listings", listingRoutes);
 
 app.listen(PORT, () => console.log(`listing-service running on port ${PORT}`));
+
+// ── Kafka Consumer ────────────────────────────────────────────────────────────
+// Consume order-events to update listing status without a synchronous HTTP call
+startConsumer(
+  "listing-service-group",
+  ["order-events"],
+  async (topic, eventType, payload) => {
+    if (eventType === "order.cancelled" && payload.listingId) {
+      const supabase = app.locals.supabase;
+      const { error } = await supabase
+        .from("listings")
+        .update({ status: "available" })
+        .eq("id", payload.listingId);
+
+      if (error) {
+        console.error("[kafka] Failed to reset listing status:", error.message);
+      } else {
+        console.log(`[kafka] Listing ${payload.listingId} reset to available`);
+      }
+    }
+  },
+).catch((err) => {
+  console.error("[kafka] listing-service consumer error:", err.message);
+  process.exit(1);
+});
