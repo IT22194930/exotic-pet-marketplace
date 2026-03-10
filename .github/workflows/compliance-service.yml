@@ -122,7 +122,10 @@ jobs:
           az containerapp update \
             --name compliance-service \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_COMPLIANCE }} \
-            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:${{ github.sha }}
+            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:${{ github.sha }} \
+            --registry-server ${{ env.REGISTRY }} \
+            --registry-username ${{ github.actor }} \
+            --registry-password ${{ secrets.GHCR_PAT }}
 
   # Job 4: Deploy to Azure Container Apps
   deploy:
