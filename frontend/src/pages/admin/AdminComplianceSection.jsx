@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const COMPLIANCE_URL = import.meta.env.VITE_COMPLIANCE_SERVICE_URL;
+const COMPLIANCE_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 const RESULT_STYLES = {
   allowed: "border-emerald-500/30 bg-emerald-500/[0.06]",

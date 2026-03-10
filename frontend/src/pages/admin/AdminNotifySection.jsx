@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const COMPLIANCE_URL = import.meta.env.VITE_COMPLIANCE_SERVICE_URL;
+const COMPLIANCE_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 const CHANNEL_OPTIONS = [
   { value: "email",    label: "📧 Email",    hint: "Sends a real SMTP email to the recipient." },

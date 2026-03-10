@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const COMPLIANCE_URL = import.meta.env.VITE_COMPLIANCE_SERVICE_URL;
+const COMPLIANCE_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 const ACTION_COLORS = {
   COMPLIANCE_APPROVED:        "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",

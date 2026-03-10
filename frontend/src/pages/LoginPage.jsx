@@ -17,7 +17,7 @@ export default function LoginPage() {
     setSuccess("");
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_IDENTITY_SERVICE_URL}/auth/login`,
+        `${import.meta.env.VITE_API_GATEWAY_URL}/auth/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

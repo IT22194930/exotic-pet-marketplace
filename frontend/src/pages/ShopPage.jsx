@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import PetCard from "../components/PetCard";
 
-const LISTING_URL = import.meta.env.VITE_LISTING_SERVICE_URL;
+const LISTING_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
-const ORDER_URL   = import.meta.env.VITE_ORDER_SERVICE_URL;
+const ORDER_URL   = import.meta.env.VITE_API_GATEWAY_URL;
 
 const TYPE_OPTIONS = ["All", "exotic", "livestock"];
 
