@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { isAuthenticated, getRole } from "../utils/auth";
+import logo from "../assets/logo2.png";
 
 export default function Navbar() {
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
-  const [role, setRole]         = useState(getRole());
+  const [role, setRole] = useState(getRole());
   const navigate = useNavigate();
 
   const syncAuth = useCallback(() => {
@@ -13,12 +14,12 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    window.addEventListener("storage",     syncAuth);
-    window.addEventListener("focus",       syncAuth);
+    window.addEventListener("storage", syncAuth);
+    window.addEventListener("focus", syncAuth);
     window.addEventListener("auth-change", syncAuth);
     return () => {
-      window.removeEventListener("storage",     syncAuth);
-      window.removeEventListener("focus",       syncAuth);
+      window.removeEventListener("storage", syncAuth);
+      window.removeEventListener("focus", syncAuth);
       window.removeEventListener("auth-change", syncAuth);
     };
   }, [syncAuth]);
@@ -31,22 +32,31 @@ export default function Navbar() {
   }, [navigate]);
 
   const dashboardPath =
-    role === "buyer"  ? "/buyer/dashboard"  :
-    role === "seller" ? "/seller/dashboard" :
-    role === "admin"  ? "/admin/dashboard"  : null;
+    role === "buyer"
+      ? "/buyer/dashboard"
+      : role === "seller"
+        ? "/seller/dashboard"
+        : role === "admin"
+          ? "/admin/dashboard"
+          : null;
 
   const dashboardLabel =
-    role === "admin"  ? "⚙️ Admin Dashboard" :
-    role === "seller" ? "📦 Seller Dashboard" :
-    role === "buyer"  ? "🛍️ My Orders" : "";
+    role === "admin"
+      ? "⚙️ Admin Dashboard"
+      : role === "seller"
+        ? "📦 Seller Dashboard"
+        : role === "buyer"
+          ? "🛍️ My Orders"
+          : "";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-10 h-16 bg-[#080c18]/90 backdrop-blur-xl border-b border-white/[0.07] shadow-[0_2px_24px_rgba(0,0,0,0.4)]">
       {/* Brand */}
-      <Link to="/" className="flex items-center gap-2.5 no-underline select-none">
-        <span className="w-9 h-9 flex items-center justify-center text-lg rounded-[10px] bg-gradient-to-br from-emerald-500 to-amber-400 shadow-[0_4px_12px_rgba(16,185,129,0.4)] flex-shrink-0">
-          🦎
-        </span>
+      <Link
+        to="/"
+        className="flex items-center gap-2.5 no-underline select-none"
+      >
+        <img src={logo} alt="ExoticPets Logo" className="w-14 h-14" />
         <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-emerald-400 to-amber-300 bg-clip-text text-transparent font-serif">
           ExoticPets
         </span>
