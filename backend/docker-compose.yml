@@ -66,9 +66,9 @@ services:
     command: npm run dev
     environment:
       - PORT=8000
-      - IDENTITY_URL=http://identity-service:8001
+      - IDENTITY_URL=https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io
       - LISTING_URL=https://listing-service.greenwave-f5d2c555.uaenorth.azurecontainerapps.io
-      - ORDER_URL=http://order-service:8003
+      - ORDER_URL=https://order-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io
       - COMPLIANCE_URL=https://compliance-service.thankfulmushroom-98fe10df.southeastasia.azurecontainerapps.io
     networks:
       - marketplace-net
