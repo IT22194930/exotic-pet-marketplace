@@ -10,9 +10,9 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 const IDENTITY_URL = process.env.IDENTITY_URL || "https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io";
-const LISTING_URL = process.env.LISTING_URL || "http://listing-service:8002";
+const LISTING_URL = process.env.LISTING_URL || "https://listing-service.greenwave-f5d2c555.uaenorth.azurecontainerapps.io";
 const ORDER_URL = process.env.ORDER_URL || "http://order-service:8003";
-const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
+const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "https://compliance-service.thankfulmushroom-98fe10df.southeastasia.azurecontainerapps.io";
 
 // ── Global middleware ─────────────────────────────────────────────────────────
 app.use(cors());

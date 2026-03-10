@@ -32,10 +32,10 @@ jobs:
         run: sleep 10
       - name: Health checks
         run: |
-          curl -f http://localhost:8001/health
-          curl -f http://localhost:8002/health
+          curl -f https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io/health
+          curl -f https://listing-service.greenwave-f5d2c555.uaenorth.azurecontainerapps.io
           curl -f http://localhost:8003/health
-          curl -f http://localhost:8004/health
+          curl -f https://compliance-service.thankfulmushroom-98fe10df.southeastasia.azurecontainerapps.io/health
       - name: Down
         if: always()
         working-directory: backend
@@ -48,6 +48,7 @@ jobs:
       fail-fast: false
       matrix:
         service:
+          - api-gateway
           - identity-service
           - listing-service
           - order-service
