@@ -61,12 +61,10 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "listingId is required" });
 
   try {
-    const user = await withTimeout(getMe(authHeader), 5000, "getMe");
-    const listing = await withTimeout(
-      getListing(listingId),
-      5000,
-      "getListing",
-    );
+    const [user, listing] = await Promise.all([
+      withTimeout(getMe(authHeader), 15000, "getMe"),
+      withTimeout(getListing(listingId), 15000, "getListing"),
+    ]);
 
     if (listing.status && listing.status !== "available") {
       return res
@@ -81,7 +79,7 @@ router.post("/", async (req, res) => {
         species: listing.species,
         sellerId,
       }),
-      5000,
+      15000,
       "checkCompliance",
     );
 
