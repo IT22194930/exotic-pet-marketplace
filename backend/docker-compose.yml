@@ -67,9 +67,9 @@ services:
     environment:
       - PORT=8000
       - IDENTITY_URL=http://identity-service:8001
-      - LISTING_URL=http://listing-service:8002
+      - LISTING_URL=https://listing-service.greenwave-f5d2c555.uaenorth.azurecontainerapps.io
       - ORDER_URL=http://order-service:8003
-      - COMPLIANCE_URL=http://compliance-service:8004
+      - COMPLIANCE_URL=https://compliance-service.thankfulmushroom-98fe10df.southeastasia.azurecontainerapps.io
     networks:
       - marketplace-net
   # ── Topic pre-creator (runs once, exits) ─────────────────────────────────
@@ -104,7 +104,7 @@ services:
     environment:
       - PORT=8001
       - JWT_SECRET=${JWT_SECRET}
-      - COMPLIANCE_URL=http://compliance-service:8004
+      - COMPLIANCE_URL=https://compliance-service.thankfulmushroom-98fe10df.southeastasia.azurecontainerapps.io
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=identity-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
@@ -150,8 +150,8 @@ services:
     environment:
       - PORT=8003
       - IDENTITY_URL=https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io
-      - LISTING_URL=http://listing-service:8002
-      - COMPLIANCE_URL=http://compliance-service:8004
+      - LISTING_URL=https://listing-service.greenwave-f5d2c555.uaenorth.azurecontainerapps.io
+      - COMPLIANCE_URL=https://compliance-service.thankfulmushroom-98fe10df.southeastasia.azurecontainerapps.io
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=order-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
