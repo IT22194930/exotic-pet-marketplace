@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const IDENTITY_URL = process.env.IDENTITY_URL || "https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io";
+const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 
 /**
  * Resolves the authenticated user from the Bearer token by calling Identity service.
@@ -14,7 +14,7 @@ async function getUserFromToken(authHeader) {
   const response = await axios.get(`${IDENTITY_URL}/users/me`, {
     headers: { Authorization: authHeader },
   });
-  return response.data; // { id, email, role, sellerVerified }
+  return response.data;
 }
 
 module.exports = { getUserFromToken };

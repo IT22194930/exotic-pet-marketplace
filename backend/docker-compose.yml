@@ -66,10 +66,10 @@ services:
     command: npm run dev
     environment:
       - PORT=8000
-      - IDENTITY_URL=https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io
-      - LISTING_URL=https://listing-service.greenwave-f5d2c555.uaenorth.azurecontainerapps.io
-      - ORDER_URL=https://order-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io
-      - COMPLIANCE_URL=https://compliance-service.thankfulmushroom-98fe10df.southeastasia.azurecontainerapps.io
+      - IDENTITY_URL=http://identity-service:8001
+      - LISTING_URL=http://listing-service:8002
+      - ORDER_URL=http://order-service:8003
+      - COMPLIANCE_URL=http://compliance-service:8004
     networks:
       - marketplace-net
   # ── Topic pre-creator (runs once, exits) ─────────────────────────────────
@@ -104,7 +104,7 @@ services:
     environment:
       - PORT=8001
       - JWT_SECRET=${JWT_SECRET}
-      - COMPLIANCE_URL=https://compliance-service.thankfulmushroom-98fe10df.southeastasia.azurecontainerapps.io
+      - COMPLIANCE_URL=http://compliance-service:8004
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=identity-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
@@ -126,7 +126,7 @@ services:
     command: npm run dev
     environment:
       - PORT=8002
-      - IDENTITY_URL=https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io
+      - IDENTITY_URL=http://identity-service:8001
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=listing-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
@@ -149,9 +149,9 @@ services:
     command: npm run dev
     environment:
       - PORT=8003
-      - IDENTITY_URL=https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io
-      - LISTING_URL=https://listing-service.greenwave-f5d2c555.uaenorth.azurecontainerapps.io
-      - COMPLIANCE_URL=https://compliance-service.thankfulmushroom-98fe10df.southeastasia.azurecontainerapps.io
+      - IDENTITY_URL=http://identity-service:8001
+      - LISTING_URL=http://listing-service:8002
+      - COMPLIANCE_URL=http://compliance-service:8004
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=order-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
@@ -173,7 +173,7 @@ services:
     command: npm run dev
     environment:
       - PORT=8004
-      - IDENTITY_URL=https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io
+      - IDENTITY_URL=http://identity-service:8001
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CLIENT_ID=compliance-service
       - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co

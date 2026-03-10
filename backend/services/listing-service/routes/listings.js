@@ -5,7 +5,7 @@ const { publish } = require("../kafka/producer");
 
 const router = express.Router();
 
-const IDENTITY_URL = process.env.IDENTITY_URL || "https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io";
+const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || "listing-images";
 
 // ── Multer in-memory upload ───────────────────────────────────────────────────
