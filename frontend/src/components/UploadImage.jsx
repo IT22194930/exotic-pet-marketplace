@@ -79,7 +79,7 @@ export default function UploadImage({ listingId, onUploaded }) {
     <div className="space-y-3">
       {/* Image preview */}
       {displayUrl && (
-        <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-white/[0.03]">
+        <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-white/3">
           <img
             src={displayUrl}
             alt="Listing preview"
@@ -125,8 +125,8 @@ export default function UploadImage({ listingId, onUploaded }) {
       <label className={`
         inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border cursor-pointer transition-all
         ${uploading
-          ? "opacity-50 cursor-not-allowed border-white/10 text-slate-500 bg-white/[0.03]"
-          : "border-white/10 text-slate-300 bg-white/[0.04] hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-400"
+          ? "opacity-50 cursor-not-allowed border-white/10 text-slate-500 bg-white/3"
+          : "border-white/10 text-slate-300 bg-white/4 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-400"
         }
       `}>
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
