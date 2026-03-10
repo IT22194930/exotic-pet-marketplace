@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { createClient } = require("@supabase/supabase-js");
 const cors = require("cors");
+const { publish } = require("./kafka/producer");
 
 const app = express();
 app.use(express.json());
@@ -91,6 +92,15 @@ app.post("/auth/register", async (req, res) => {
       .json({ error: "Database error", details: error.message });
   }
 
+  // Publish event (non-blocking – failure must not break registration)
+  publish("user-events", "user.registered", {
+    userId: data.id,
+    email: data.email,
+    role: data.role,
+  }).catch((e) =>
+    console.error("[kafka] user.registered publish failed:", e.message),
+  );
+
   res.status(201).json({
     message: "Registered successfully",
     user: {
@@ -166,6 +176,13 @@ app.patch("/sellers/:id/verify", authMiddleware, async (req, res) => {
   if (error || !updated)
     return res.status(404).json({ error: "Seller not found" });
 
+  publish("user-events", "seller.verified", {
+    sellerId: updated.id,
+    email: updated.email,
+  }).catch((e) =>
+    console.error("[kafka] seller.verified publish failed:", e.message),
+  );
+
   res.json({
     message: "Seller verified",
     seller: {
@@ -187,7 +204,8 @@ app.get("/users", authMiddleware, async (req, res) => {
     .select("id,email,role,seller_verified,created_at")
     .order("created_at", { ascending: false });
 
-  if (error) return res.status(500).json({ error: "DB error", details: error.message });
+  if (error)
+    return res.status(500).json({ error: "DB error", details: error.message });
   res.json({ count: data.length, users: data });
 });
 

@@ -26,7 +26,7 @@ router.post("/check", async (req, res) => {
 
   try {
     const requester = await getUserFromToken(req.headers.authorization);
-    await audit(orderId, "COMPLIANCE_CHECK_REQUESTED", {
+    await audit("order", orderId, "COMPLIANCE_CHECK_REQUESTED", {
       byUserId: requester.id,
       species,
       sellerId,
@@ -40,7 +40,7 @@ router.post("/check", async (req, res) => {
       .maybeSingle();
 
     if (rErr) {
-      await audit(orderId, "COMPLIANCE_CHECK_FAILED_DB", {
+      await audit("order", orderId, "COMPLIANCE_CHECK_FAILED_DB", {
         error: rErr.message,
       });
       return res.status(500).json({ error: "DB error", details: rErr.message });
@@ -51,7 +51,7 @@ router.post("/check", async (req, res) => {
 
     // If restricted => block unless requester is admin
     if (restricted && requester.role !== "admin") {
-      await audit(orderId, "COMPLIANCE_REJECTED", {
+      await audit("order", orderId, "COMPLIANCE_REJECTED", {
         reason: "RESTRICTED_SPECIES_REQUIRES_ADMIN_REVIEW",
       });
 
@@ -84,7 +84,7 @@ router.post("/check", async (req, res) => {
       });
     }
 
-    await audit(orderId, "COMPLIANCE_APPROVED", { restricted });
+    await audit("order", orderId, "COMPLIANCE_APPROVED", { restricted });
 
     // Send approval email
     if (emailTo) {

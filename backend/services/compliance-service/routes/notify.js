@@ -22,7 +22,7 @@ router.post("/order-confirmed", async (req, res) => {
 
   try {
     const requester = await getUserFromToken(req.headers.authorization);
-    await audit(orderId, "NOTIFY_REQUESTED", {
+    await audit("order", orderId, "NOTIFY_REQUESTED", {
       byUserId: requester.id,
       channel,
       recipient,
@@ -35,7 +35,9 @@ router.post("/order-confirmed", async (req, res) => {
       .single();
 
     if (error) {
-      await audit(orderId, "NOTIFY_FAILED_DB", { error: error.message });
+      await audit("order", orderId, "NOTIFY_FAILED_DB", {
+        error: error.message,
+      });
       return res
         .status(500)
         .json({ error: "DB error", details: error.message });
@@ -60,18 +62,23 @@ router.post("/order-confirmed", async (req, res) => {
             </div>
           `,
         });
-        await audit(orderId, "NOTIFY_EMAIL_SENT", {
+        await audit("order", orderId, "NOTIFY_EMAIL_SENT", {
           recipient,
           emailMessageId,
         });
       } catch (mailErr) {
-        await audit(orderId, "NOTIFY_EMAIL_FAILED", { error: mailErr.message });
+        await audit("order", orderId, "NOTIFY_EMAIL_FAILED", {
+          error: mailErr.message,
+        });
         // Non-fatal: notification already saved to DB
         console.error("SMTP error:", mailErr.message);
       }
     }
 
-    await audit(orderId, "NOTIFY_SENT", { notificationId: data.id, channel });
+    await audit("order", orderId, "NOTIFY_SENT", {
+      notificationId: data.id,
+      channel,
+    });
 
     res.json({
       message: "Notification sent",
