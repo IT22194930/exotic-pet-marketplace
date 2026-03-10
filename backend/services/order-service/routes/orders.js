@@ -33,18 +33,22 @@ async function getMe(authHeader) {
     throw new Error("Missing Bearer token");
   const r = await axios.get(`${IDENTITY_URL}/users/me`, {
     headers: { Authorization: authHeader },
+    timeout: 30000,
   });
   return r.data;
 }
 
 async function getListing(listingId) {
-  const r = await axios.get(`${LISTING_URL}/listings/${listingId}`);
+  const r = await axios.get(`${LISTING_URL}/listings/${listingId}`, {
+    timeout: 30000,
+  });
   return r.data;
 }
 
 async function checkCompliance(authHeader, payload) {
   const r = await axios.post(`${COMPLIANCE_URL}/compliance/check`, payload, {
     headers: { Authorization: authHeader },
+    timeout: 30000,
   });
   return r.data;
 }
@@ -62,8 +66,8 @@ router.post("/", async (req, res) => {
 
   try {
     const [user, listing] = await Promise.all([
-      withTimeout(getMe(authHeader), 15000, "getMe"),
-      withTimeout(getListing(listingId), 15000, "getListing"),
+      withTimeout(getMe(authHeader), 30000, "getMe"),
+      withTimeout(getListing(listingId), 30000, "getListing"),
     ]);
 
     if (listing.status && listing.status !== "available") {
@@ -79,7 +83,7 @@ router.post("/", async (req, res) => {
         species: listing.species,
         sellerId,
       }),
-      15000,
+      30000,
       "checkCompliance",
     );
 
