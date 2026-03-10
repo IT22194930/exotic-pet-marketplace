@@ -1,28 +1,50 @@
 import { Link } from "react-router-dom";
 
 const features = [
-  { icon: "🦜", title: "Rare Exotic Birds",   desc: "Discover stunning parrots, toucans, and rare avian species from certified breeders worldwide." },
-  { icon: "🐍", title: "Premium Reptiles",    desc: "From ball pythons to chameleons — find your perfect scaled companion with full health guarantees." },
-  { icon: "🦊", title: "Exotic Mammals",      desc: "Sugar gliders, fennec foxes, hedgehogs and more, from trusted licensed sellers near you." },
-  { icon: "🛡️", title: "Verified Sellers",   desc: "Every listing is backed by our rigorous seller verification and animal welfare certification." },
-  { icon: "🚚", title: "Safe Delivery",       desc: "Stress-free, IATA-compliant live animal transport with real-time tracking to your door." },
-  { icon: "💬", title: "Expert Support",      desc: "Our team of exotic animal specialists is available 24/7 before and after your purchase." },
+  {
+    icon: "🦜",
+    title: "Rare Exotic Birds",
+    desc: "Discover stunning parrots, toucans, and rare avian species from certified breeders worldwide.",
+  },
+  {
+    icon: "🐍",
+    title: "Premium Reptiles",
+    desc: "From ball pythons to chameleons — find your perfect scaled companion with full health guarantees.",
+  },
+  {
+    icon: "🦊",
+    title: "Exotic Mammals",
+    desc: "Sugar gliders, fennec foxes, hedgehogs and more, from trusted licensed sellers near you.",
+  },
+  {
+    icon: "🛡️",
+    title: "Verified Sellers",
+    desc: "Every listing is backed by our rigorous seller verification and animal welfare certification.",
+  },
+  {
+    icon: "🚚",
+    title: "Safe Delivery",
+    desc: "Stress-free, IATA-compliant live animal transport with real-time tracking to your door.",
+  },
+  {
+    icon: "💬",
+    title: "Expert Support",
+    desc: "Our team of exotic animal specialists is available 24/7 before and after your purchase.",
+  },
 ];
 
 const stats = [
   { value: "12,000+", label: "Verified Listings" },
-  { value: "3,500+",  label: "Trusted Sellers" },
-  { value: "95%",     label: "Happy Buyers" },
-  { value: "60+",     label: "Countries" },
+  { value: "3,500+", label: "Trusted Sellers" },
+  { value: "95%", label: "Happy Buyers" },
+  { value: "60+", label: "Countries" },
 ];
 
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
-
       {/* ── HERO ── */}
       <section className="relative flex flex-col items-center justify-center text-center px-6 pt-36 pb-20 overflow-hidden">
-
         {/* bg gradients */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(16,185,129,0.18),transparent_70%),radial-gradient(ellipse_60%_40%_at_80%_80%,rgba(245,158,11,0.10),transparent_60%),linear-gradient(180deg,#0a0f1a_0%,#0d1526_100%)] pointer-events-none" />
 
@@ -37,7 +59,8 @@ export default function HomePage() {
             backgroundImage:
               "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)",
             backgroundSize: "60px 60px",
-            maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)",
+            maskImage:
+              "radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)",
           }}
         />
 
@@ -60,8 +83,9 @@ export default function HomePage() {
           </h1>
 
           <p className="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto mb-10">
-            Connect with verified sellers of rare and exotic pets from around the world.
-            Safe, legal, and ethically sourced — your dream companion is waiting.
+            Connect with verified sellers of rare and exotic pets from around
+            the world. Safe, legal, and ethically sourced - your dream companion
+            is waiting.
           </p>
 
           {/* CTAs */}
@@ -110,7 +134,9 @@ export default function HomePage() {
               className="bg-[#0f1a2e]/80 backdrop-blur border border-white/[0.07] rounded-2xl p-8 hover:-translate-y-2 hover:border-emerald-500/30 hover:shadow-[0_20px_48px_rgba(16,185,129,0.12)] transition-all duration-300"
             >
               <span className="text-3xl mb-4 block">{f.icon}</span>
-              <h3 className="text-base font-bold text-slate-100 mb-2">{f.title}</h3>
+              <h3 className="text-base font-bold text-slate-100 mb-2">
+                {f.title}
+              </h3>
               <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
             </div>
           ))}
