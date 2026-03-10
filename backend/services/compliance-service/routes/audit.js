@@ -14,6 +14,15 @@ async function requireAdmin(authHeader) {
   return user;
 }
 
+/** Apply the standard query filters to any audit_logs Supabase query. */
+function applyFilters(query, { action, order_id, from, to }) {
+  if (action) query = query.eq("action", action);
+  if (order_id) query = query.eq("order_id", order_id);
+  if (from) query = query.gte("created_at", from);
+  if (to) query = query.lte("created_at", to);
+  return query;
+}
+
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 /**
@@ -48,45 +57,38 @@ router.get("/orders/:orderId", async (req, res) => {
  */
 router.get("/logs", async (req, res) => {
   const { action, order_id, from, to } = req.query;
+  const filters = { action, order_id, from, to };
   const limit = Math.min(parseInt(req.query.limit) || 50, 200);
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const from_ = (page - 1) * limit;
   const to_ = from_ + limit - 1;
 
   // ── 1. Count-only query (no range, so it never throws PGRST103) ──
-  let countQ = supabase
-    .from("audit_logs")
-    .select("*", { count: "exact", head: true });
+  const { count, error: countErr } = await applyFilters(
+    supabase.from("audit_logs").select("*", { count: "exact", head: true }),
+    filters,
+  );
 
-  if (action) countQ = countQ.eq("action", action);
-  if (order_id) countQ = countQ.eq("order_id", order_id);
-  if (from) countQ = countQ.gte("created_at", from);
-  if (to) countQ = countQ.lte("created_at", to);
-
-  const { count, error: countErr } = await countQ;
   if (countErr)
     return res
       .status(500)
       .json({ error: "DB error", details: countErr.message });
 
   const total = count ?? 0;
-  const pages = total === 0 ? 1 : Math.ceil(total / limit);
+  const pages = Math.max(1, Math.ceil(total / limit));
 
   // ── 2. Data query — only if the requested range has rows ──
   let logs = [];
   if (from_ < total) {
-    let dataQ = supabase
-      .from("audit_logs")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .range(from_, Math.min(to_, total - 1));
+    const { data, error } = await applyFilters(
+      supabase
+        .from("audit_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(from_, Math.min(to_, total - 1)),
+      filters,
+    );
 
-    if (action) dataQ = dataQ.eq("action", action);
-    if (order_id) dataQ = dataQ.eq("order_id", order_id);
-    if (from) dataQ = dataQ.gte("created_at", from);
-    if (to) dataQ = dataQ.lte("created_at", to);
-
-    const { data, error } = await dataQ;
     if (error)
       return res
         .status(500)
