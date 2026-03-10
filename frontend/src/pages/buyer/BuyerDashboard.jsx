@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getAuthUser } from "../../utils/auth";
 
-const ORDER_URL = import.meta.env.VITE_ORDER_SERVICE_URL;
+const ORDER_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 const STATUS_STYLES = {
   created:   "bg-emerald-500/15 text-emerald-400  border-emerald-500/30",

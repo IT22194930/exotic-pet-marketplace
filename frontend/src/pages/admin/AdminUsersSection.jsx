@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getAuthUser } from "../../utils/auth";
 
-const IDENTITY_URL = import.meta.env.VITE_IDENTITY_SERVICE_URL;
+const IDENTITY_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 const ROLE_COLORS = {
   admin:  "bg-purple-500/15 text-purple-400 border-purple-500/30",

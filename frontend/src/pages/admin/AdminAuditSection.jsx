@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const COMPLIANCE_URL = import.meta.env.VITE_COMPLIANCE_SERVICE_URL;
+const COMPLIANCE_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 // ── Action metadata ──────────────────────────────────────────────────────────
 const ACTION_META = {

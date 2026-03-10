@@ -3,7 +3,7 @@ import { getAuthUser } from "../../utils/auth";
 import PetCard from "../../components/PetCard";
 import UploadImage from "../../components/UploadImage";
 
-const LISTING_URL = import.meta.env.VITE_LISTING_SERVICE_URL;
+const LISTING_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 const STATUS_COLORS = {
   available: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",

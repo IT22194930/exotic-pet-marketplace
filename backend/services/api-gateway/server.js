@@ -9,11 +9,10 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
+const IDENTITY_URL = process.env.IDENTITY_URL || "https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io";
 const LISTING_URL = process.env.LISTING_URL || "http://listing-service:8002";
 const ORDER_URL = process.env.ORDER_URL || "http://order-service:8003";
-const COMPLIANCE_URL =
-  process.env.COMPLIANCE_URL || "http://compliance-service:8004";
+const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
 
 // ── Global middleware ─────────────────────────────────────────────────────────
 app.use(cors());
