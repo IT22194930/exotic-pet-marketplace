@@ -73,7 +73,7 @@ export default function UploadImage({ listingId, onUploaded }) {
     }
   };
 
-  const displayUrl = imageUrl || preview;
+  const displayUrl = preview;
 
   return (
     <div className="space-y-3">
@@ -118,7 +118,7 @@ export default function UploadImage({ listingId, onUploaded }) {
 
       {/* Success note */}
       {imageUrl && !uploading && (
-        <p className="text-xs text-emerald-400 font-medium">✅ Image uploaded successfully.</p>
+        <p className="text-xs text-emerald-400 font-medium">Image uploaded successfully.</p>
       )}
 
       {/* File input button */}
