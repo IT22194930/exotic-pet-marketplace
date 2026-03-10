@@ -90,7 +90,7 @@ router.post("/", async (req, res) => {
       .status(401)
       .json({
         error: "Unauthorized",
-        details: err.response?.data || err.message,
+        details: err.response?.data || err.message || err.code || String(err),
       });
   }
 });
@@ -165,7 +165,7 @@ router.post("/:id/image", upload.single("image"), async (req, res) => {
       .status(401)
       .json({
         error: "Unauthorized",
-        details: err.response?.data || err.message,
+        details: err.response?.data || err.message || err.code || String(err),
       });
   }
 });
@@ -198,7 +198,7 @@ router.get("/my", async (req, res) => {
       .status(401)
       .json({
         error: "Unauthorized",
-        details: err.response?.data || err.message,
+        details: err.response?.data || err.message || err.code || String(err),
       });
   }
 });
@@ -286,7 +286,7 @@ router.put("/:id", async (req, res) => {
       .status(401)
       .json({
         error: "Unauthorized",
-        details: err.response?.data || err.message,
+        details: err.response?.data || err.message || err.code || String(err),
       });
   }
 });
@@ -351,7 +351,7 @@ router.delete("/:id", async (req, res) => {
       .status(401)
       .json({
         error: "Unauthorized",
-        details: err.response?.data || err.message,
+        details: err.response?.data || err.message || err.code || String(err),
       });
   }
 });
