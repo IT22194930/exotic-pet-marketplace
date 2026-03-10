@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
+const IDENTITY_URL = process.env.IDENTITY_URL || "https://identity-service.blackmeadow-879b6e0b.southeastasia.azurecontainerapps.io";
 
 /**
  * Resolves the authenticated user from the Bearer token by calling Identity service.
