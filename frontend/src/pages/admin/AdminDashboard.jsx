@@ -1,47 +1,83 @@
 import { useState } from "react";
-import AdminUsersSection      from "./AdminUsersSection";
-import AdminAuditSection      from "./AdminAuditSection";
+import AdminUsersSection from "./AdminUsersSection";
+import AdminAuditSection from "./AdminAuditSection";
 import AdminComplianceSection from "./AdminComplianceSection";
-import AdminNotifySection     from "./AdminNotifySection";
+import AdminRestrictedSpeciesSection from "./AdminRestrictedSpeciesSection";
+import AdminNotifySection from "./AdminNotifySection";
 
 // ── Nav config ───────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   {
-    id:    "users",
+    id: "users",
     label: "User Management",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M7.5 6.5C7.5 8.981 9.519 11 12 11s4.5-2.019 4.5-4.5S14.481 2 12 2 7.5 4.019 7.5 6.5zM20 21h1v-1c0-3.859-3.141-7-7-7h-4c-3.86 0-7 3.141-7 7v1h17z"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="w-5 h-5"
+      >
+        <path d="M7.5 6.5C7.5 8.981 9.519 11 12 11s4.5-2.019 4.5-4.5S14.481 2 12 2 7.5 4.019 7.5 6.5zM20 21h1v-1c0-3.859-3.141-7-7-7h-4c-3.86 0-7 3.141-7 7v1h17z" />
       </svg>
     ),
     accent: "purple",
   },
   {
-    id:    "audit",
+    id: "audit",
     label: "Audit Logs",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M19 3H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="w-5 h-5"
+      >
+        <path d="M19 3H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
       </svg>
     ),
     accent: "sky",
   },
   {
-    id:    "compliance",
+    id: "compliance",
     label: "Compliance",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="w-5 h-5"
+      >
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z" />
       </svg>
     ),
     accent: "emerald",
   },
   {
-    id:    "notify",
+    id: "species",
+    label: "Restricted Species",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="w-5 h-5"
+      >
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z" />
+      </svg>
+    ),
+    accent: "amber",
+  },
+  {
+    id: "notify",
     label: "Notify",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="w-5 h-5"
+      >
+        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
       </svg>
     ),
     accent: "purple",
@@ -50,21 +86,23 @@ const NAV_ITEMS = [
 
 // ── Accent helpers ───────────────────────────────────────────────────────────
 const ACCENT_ACTIVE = {
-  purple:  "bg-purple-500/15 text-purple-300 border-purple-500/30",
-  sky:     "bg-sky-500/15 text-sky-300 border-sky-500/30",
+  purple: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+  sky: "bg-sky-500/15 text-sky-300 border-sky-500/30",
   emerald: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  amber: "bg-amber-500/15 text-amber-300 border-amber-500/30",
 };
 const ACCENT_DOT = {
-  purple:  "bg-purple-400",
-  sky:     "bg-sky-400",
+  purple: "bg-purple-400",
+  sky: "bg-sky-400",
   emerald: "bg-emerald-400",
+  amber: "bg-amber-400",
 };
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("users");
-  const [sidebarOpen, setSidebarOpen]     = useState(true);   // desktop collapse
-  const [mobileOpen, setMobileOpen]       = useState(false);  // mobile drawer
+  const [sidebarOpen, setSidebarOpen] = useState(true); // desktop collapse
+  const [mobileOpen, setMobileOpen] = useState(false); // mobile drawer
 
   const currentNav = NAV_ITEMS.find((n) => n.id === activeSection);
 
@@ -93,7 +131,9 @@ export default function AdminDashboard() {
                 <span className="shrink-0">{item.icon}</span>
                 {sidebarOpen && <span className="truncate">{item.label}</span>}
                 {isActive && sidebarOpen && (
-                  <span className={`ml-auto w-1.5 h-1.5 rounded-full shrink-0 ${ACCENT_DOT[item.accent]}`} />
+                  <span
+                    className={`ml-auto w-1.5 h-1.5 rounded-full shrink-0 ${ACCENT_DOT[item.accent]}`}
+                  />
                 )}
               </button>
             </li>
@@ -105,7 +145,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0a0f1a] flex">
-
       {/* ── Mobile overlay ── */}
       {mobileOpen && (
         <div
@@ -121,9 +160,11 @@ export default function AdminDashboard() {
         }`}
       >
         {/* Logo bar + collapse toggle */}
-        <div className={`flex items-center border-b border-white/[0.07] h-16 shrink-0 ${
-          sidebarOpen ? "px-4 justify-between" : "justify-center"
-        }`}>
+        <div
+          className={`flex items-center border-b border-white/[0.07] h-16 shrink-0 ${
+            sidebarOpen ? "px-4 justify-between" : "justify-center"
+          }`}
+        >
           {sidebarOpen && (
             <span className="text-slate-100 font-bold text-sm tracking-tight font-serif truncate">
               🐾 Admin Panel
@@ -135,12 +176,22 @@ export default function AdminDashboard() {
             className="p-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] transition-all"
           >
             {sidebarOpen ? (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-4 h-4"
+              >
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-4 h-4"
+              >
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
               </svg>
             )}
           </button>
@@ -171,8 +222,13 @@ export default function AdminDashboard() {
             onClick={() => setMobileOpen(false)}
             className="p-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] transition-all"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
             </svg>
           </button>
         </div>
@@ -195,7 +251,9 @@ export default function AdminDashboard() {
                     <span className="shrink-0">{item.icon}</span>
                     <span className="truncate">{item.label}</span>
                     {isActive && (
-                      <span className={`ml-auto w-1.5 h-1.5 rounded-full shrink-0 ${ACCENT_DOT[item.accent]}`} />
+                      <span
+                        className={`ml-auto w-1.5 h-1.5 rounded-full shrink-0 ${ACCENT_DOT[item.accent]}`}
+                      />
                     )}
                   </button>
                 </li>
@@ -220,8 +278,13 @@ export default function AdminDashboard() {
             onClick={() => setMobileOpen(true)}
             className="p-2 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] transition-all lg:hidden"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
+              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
             </svg>
           </button>
 
@@ -229,25 +292,30 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-600">Admin</span>
             <span className="text-slate-700">/</span>
-            <span className="text-slate-100 font-semibold">{currentNav?.label}</span>
+            <span className="text-slate-100 font-semibold">
+              {currentNav?.label}
+            </span>
           </div>
 
           <div className="flex-1" />
 
           {/* Active section badge */}
-          <span className={`hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${
-            ACCENT_ACTIVE[currentNav?.accent || "purple"]
-          }`}>
+          <span
+            className={`hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${
+              ACCENT_ACTIVE[currentNav?.accent || "purple"]
+            }`}
+          >
             {currentNav?.label}
           </span>
         </header>
 
         {/* Section content */}
         <div className="flex-1 p-6 md:p-10 max-w-screen-xl mx-auto w-full">
-          {activeSection === "users"      && <AdminUsersSection />}
-          {activeSection === "audit"      && <AdminAuditSection />}
+          {activeSection === "users" && <AdminUsersSection />}
+          {activeSection === "audit" && <AdminAuditSection />}
           {activeSection === "compliance" && <AdminComplianceSection />}
-          {activeSection === "notify"     && <AdminNotifySection />}
+          {activeSection === "species" && <AdminRestrictedSpeciesSection />}
+          {activeSection === "notify" && <AdminNotifySection />}
         </div>
       </main>
     </div>
