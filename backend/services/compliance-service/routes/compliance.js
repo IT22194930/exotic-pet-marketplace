@@ -195,7 +195,6 @@ router.post("/restricted-species", async (req, res) => {
 /**
  * PUT /compliance/restricted-species/:id
  * Body: { species }
- * Updates a restricted species entry.
  */
 router.put("/restricted-species/:id", async (req, res) => {
   try {
