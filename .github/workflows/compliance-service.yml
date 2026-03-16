@@ -127,7 +127,7 @@ jobs:
         with:
           containerAppName: compliance-service
           resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          imageToDeploy: ${{ env.REGISTRY }}/${{ secrets.AZURE_OWNER }}/${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:${{ github.sha }}
+          imageToDeploy: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:${{ github.sha }}
           registryUrl: ${{ env.REGISTRY }}
           registryUsername: ${{ github.actor }}
           registryPassword: ${{ secrets.GITHUB_TOKEN }}
