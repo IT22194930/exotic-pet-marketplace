@@ -240,7 +240,7 @@ export default function AdminComplianceSection() {
               <div
                 className={`flex items-center gap-3 p-4 rounded-xl mb-5 ${isAllowed ? "bg-emerald-500/10" : "bg-red-500/10"}`}
               >
-                <span className="text-3xl">{isAllowed ? "?" : "?"}</span>
+                <span className="text-3xl">{isAllowed ? "✅" : "❌"}</span>
                 <div>
                   <p
                     className={`text-xl font-extrabold font-serif leading-tight ${isAllowed ? "text-emerald-300" : "text-red-300"}`}
@@ -315,7 +315,7 @@ export default function AdminComplianceSection() {
                       <span
                         className={`text-xs ${h.allowed ? "text-emerald-400" : "text-red-400"}`}
                       >
-                        {h.allowed ? "?" : "?"}
+                        {h.allowed ? "✅" : "❌"}
                       </span>
                       <span className="text-slate-300 text-xs truncate font-medium">
                         {h.species}
