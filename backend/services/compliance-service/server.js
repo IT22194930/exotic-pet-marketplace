@@ -32,11 +32,14 @@ app.listen(PORT, () =>
 
 // ── Kafka Consumer ────────────────────────────────────────────────────────────
 // Handles async audit logging and notifications for all domain events
-startConsumer(
-  "compliance-service-group",
-  ["order-events", "user-events", "listing-events"],
-  async (topic, eventType, payload) => {
-    switch (eventType) {
+// Start asynchronously so HTTP server is accessible even if Kafka fails
+(async () => {
+  try {
+    await startConsumer(
+      "compliance-service-group",
+      ["order-events", "user-events", "listing-events"],
+      async (topic, eventType, payload) => {
+        switch (eventType) {
       // ── Order events ──────────────────────────────────────────────────────
       case "order.placed":
         await audit("order", payload.orderId, "ORDER_PLACED", {
@@ -115,6 +118,8 @@ startConsumer(
         );
     }
   },
-).catch((err) =>
-  console.error("[kafka] compliance-service consumer error:", err.message),
-);
+    );
+  } catch (err) {
+    console.error("[kafka] compliance-service consumer error:", err.message);
+  }
+})();
