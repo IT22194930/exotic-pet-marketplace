@@ -51,6 +51,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: backend/services/compliance-service
+        run: npm install
+
       - name: Run Snyk
         uses: snyk/actions/node@master
         continue-on-error: true
