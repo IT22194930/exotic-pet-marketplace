@@ -115,6 +115,9 @@ jobs:
     needs: build-and-push
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     steps:
+      - name: Set lower-case owner
+        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
