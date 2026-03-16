@@ -142,12 +142,10 @@ router.get("/restricted-species", async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   } catch (err) {
-    return res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message,
-      });
+    return res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
   }
 });
 
@@ -176,19 +174,21 @@ router.post("/restricted-species", async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
 
-    await audit("restricted_species", data.id, "RESTRICTED_SPECIES_ADDED", {
-      species: data.species,
-      by: requester.id,
-    });
+    try {
+      await audit("restricted_species", data.id, "RESTRICTED_SPECIES_ADDED", {
+        species: data.species,
+        by: requester.id,
+      });
+    } catch (auditErr) {
+      console.error("Audit failed:", auditErr.message, auditErr.response);
+    }
 
     return res.status(201).json(data);
   } catch (err) {
-    return res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message,
-      });
+    return res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
   }
 });
 
@@ -221,19 +221,21 @@ router.put("/restricted-species/:id", async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "Not found" });
 
-    await audit("restricted_species", id, "RESTRICTED_SPECIES_UPDATED", {
-      species: data.species,
-      by: requester.id,
-    });
+    try {
+      await audit("restricted_species", id, "RESTRICTED_SPECIES_UPDATED", {
+        species: data.species,
+        by: requester.id,
+      });
+    } catch (auditErr) {
+      console.error("Audit failed:", auditErr.message, auditErr.response);
+    }
 
     return res.json(data);
   } catch (err) {
-    return res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message,
-      });
+    return res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
   }
 });
 
@@ -266,19 +268,21 @@ router.delete("/restricted-species/:id", async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
 
-    await audit("restricted_species", id, "RESTRICTED_SPECIES_DELETED", {
-      species: existing.species,
-      by: requester.id,
-    });
+    try {
+      await audit("restricted_species", id, "RESTRICTED_SPECIES_DELETED", {
+        species: existing.species,
+        by: requester.id,
+      });
+    } catch (auditErr) {
+      console.error("Audit failed:", auditErr.message, auditErr.response);
+    }
 
     return res.json({ success: true });
   } catch (err) {
-    return res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message,
-      });
+    return res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
   }
 });
 

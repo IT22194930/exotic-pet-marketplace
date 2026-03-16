@@ -131,6 +131,153 @@ export default function AdminRestrictedSpeciesSection() {
     }
   };
 
+  let speciesContent;
+  if (spLoading && species.length === 0) {
+    speciesContent = (
+      <div className="flex items-center justify-center py-16 text-slate-600 text-sm gap-3">
+        <span className="w-5 h-5 rounded-full border-2 border-slate-700 border-t-slate-400 animate-spin" />
+        <span>Loading…</span>
+      </div>
+    );
+  } else if (species.length === 0) {
+    speciesContent = (
+      <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+        <span className="text-5xl opacity-10">🦎</span>
+        <p className="text-slate-500 text-sm font-medium">
+          No restricted species yet
+        </p>
+        <p className="text-slate-700 text-xs leading-relaxed">
+          Use the form above to add the first species to the registry.
+        </p>
+      </div>
+    );
+  } else {
+    speciesContent = (
+      <>
+        <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-slate-700 mb-4">
+          {species.length} {species.length === 1 ? "entry" : "entries"}
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/[0.06]">
+                <th className="text-left px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 w-12">
+                  #
+                </th>
+                <th className="text-left px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
+                  Species
+                </th>
+                <th className="text-right px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {species.map((row, idx) =>
+                editId === row.id ? (
+                  <tr
+                    key={row.id}
+                    className="border-b border-white/[0.04] bg-amber-500/[0.04]"
+                  >
+                    <td className="px-4 py-3 text-slate-600 text-xs font-mono">
+                      {idx + 1}
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="text"
+                        value={editForm.species}
+                        onChange={(e) =>
+                          setEditForm({ species: e.target.value })
+                        }
+                        autoFocus
+                        required
+                        className="w-full px-3 py-2 rounded-lg bg-white/[0.05] border border-amber-500/40 text-slate-200 text-sm focus:outline-none focus:border-amber-500/70 transition-all"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={handleUpdateSpecies}
+                          disabled={editLoading}
+                          className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold text-xs transition-all flex items-center gap-1.5"
+                        >
+                          {editLoading ? (
+                            <span className="w-3 h-3 rounded-full border border-white/30 border-t-white animate-spin" />
+                          ) : (
+                            "Save"
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setEditId(null)}
+                          className="px-3 py-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-slate-200 font-semibold text-xs transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr
+                    key={row.id}
+                    className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
+                  >
+                    <td className="px-4 py-3 text-slate-600 text-xs font-mono">
+                      {idx + 1}
+                    </td>
+                    <td className="px-4 py-3 text-slate-200 font-medium">
+                      {row.species}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {deleteId === row.id ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-xs text-red-400">
+                            Confirm?
+                          </span>
+                          <button
+                            onClick={() => handleDeleteSpecies(row.id)}
+                            disabled={deleteLoading}
+                            className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold text-xs transition-all flex items-center gap-1"
+                          >
+                            {deleteLoading ? (
+                              <span className="w-3 h-3 rounded-full border border-white/30 border-t-white animate-spin" />
+                            ) : (
+                              "Yes, Delete"
+                            )}
+                          </button>
+                          <button
+                            onClick={() => setDeleteId(null)}
+                            className="px-3 py-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-slate-200 font-semibold text-xs transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => startEdit(row)}
+                            className="px-3 py-1.5 rounded-lg border border-amber-500/25 text-amber-400 hover:bg-amber-500/10 font-semibold text-xs transition-all"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setDeleteId(row.id)}
+                            className="px-3 py-1.5 rounded-lg border border-red-500/25 text-red-400 hover:bg-red-500/10 font-semibold text-xs transition-all"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       {/* ── Page header ── */}
@@ -181,10 +328,14 @@ export default function AdminRestrictedSpeciesSection() {
         </div>
         <form onSubmit={handleAddSpecies} className="flex flex-wrap gap-3">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5">
+            <label
+              htmlFor="add-species"
+              className="block text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 mb-1.5"
+            >
               Species Name <span className="text-red-400">*</span>
             </label>
             <input
+              id="add-species"
               type="text"
               value={addForm.species}
               onChange={(e) => setAddForm({ species: e.target.value })}
@@ -213,145 +364,7 @@ export default function AdminRestrictedSpeciesSection() {
 
       {/* ── Species table ── */}
       <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628] p-6">
-        {spLoading && species.length === 0 ? (
-          <div className="flex items-center justify-center py-16 text-slate-600 text-sm gap-3">
-            <span className="w-5 h-5 rounded-full border-2 border-slate-700 border-t-slate-400 animate-spin" />
-            Loading…
-          </div>
-        ) : species.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-            <span className="text-5xl opacity-10">🦎</span>
-            <p className="text-slate-500 text-sm font-medium">
-              No restricted species yet
-            </p>
-            <p className="text-slate-700 text-xs leading-relaxed">
-              Use the form above to add the first species to the registry.
-            </p>
-          </div>
-        ) : (
-          <>
-            <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-slate-700 mb-4">
-              {species.length} {species.length === 1 ? "entry" : "entries"}
-            </p>
-            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.06]">
-                    <th className="text-left px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600 w-12">
-                      #
-                    </th>
-                    <th className="text-left px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
-                      Species
-                    </th>
-                    <th className="text-right px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {species.map((row, idx) =>
-                    editId === row.id ? (
-                      <tr
-                        key={row.id}
-                        className="border-b border-white/[0.04] bg-amber-500/[0.04]"
-                      >
-                        <td className="px-4 py-3 text-slate-600 text-xs font-mono">
-                          {idx + 1}
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={editForm.species}
-                            onChange={(e) =>
-                              setEditForm({ species: e.target.value })
-                            }
-                            autoFocus
-                            required
-                            className="w-full px-3 py-2 rounded-lg bg-white/[0.05] border border-amber-500/40 text-slate-200 text-sm focus:outline-none focus:border-amber-500/70 transition-all"
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={handleUpdateSpecies}
-                              disabled={editLoading}
-                              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold text-xs transition-all flex items-center gap-1.5"
-                            >
-                              {editLoading ? (
-                                <span className="w-3 h-3 rounded-full border border-white/30 border-t-white animate-spin" />
-                              ) : (
-                                "Save"
-                              )}
-                            </button>
-                            <button
-                              onClick={() => setEditId(null)}
-                              className="px-3 py-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-slate-200 font-semibold text-xs transition-all"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr
-                        key={row.id}
-                        className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
-                      >
-                        <td className="px-4 py-3 text-slate-600 text-xs font-mono">
-                          {idx + 1}
-                        </td>
-                        <td className="px-4 py-3 text-slate-200 font-medium">
-                          {row.species}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {deleteId === row.id ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="text-xs text-red-400">
-                                Confirm?
-                              </span>
-                              <button
-                                onClick={() => handleDeleteSpecies(row.id)}
-                                disabled={deleteLoading}
-                                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold text-xs transition-all flex items-center gap-1"
-                              >
-                                {deleteLoading ? (
-                                  <span className="w-3 h-3 rounded-full border border-white/30 border-t-white animate-spin" />
-                                ) : (
-                                  "Yes, Delete"
-                                )}
-                              </button>
-                              <button
-                                onClick={() => setDeleteId(null)}
-                                className="px-3 py-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-slate-200 font-semibold text-xs transition-all"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => startEdit(row)}
-                                className="px-3 py-1.5 rounded-lg border border-amber-500/25 text-amber-400 hover:bg-amber-500/10 font-semibold text-xs transition-all"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => setDeleteId(row.id)}
-                                className="px-3 py-1.5 rounded-lg border border-red-500/25 text-red-400 hover:bg-red-500/10 font-semibold text-xs transition-all"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ),
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+        {speciesContent}
       </div>
     </>
   );
