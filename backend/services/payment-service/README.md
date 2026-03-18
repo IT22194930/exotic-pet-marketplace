@@ -46,6 +46,23 @@ create unique index if not exists payments_order_id_key on public.payments(order
 create index if not exists payments_buyer_id_idx on public.payments(buyer_id);
 ```
 
+### If you already created the table but get `buyer_id` schema errors
+
+If the service logs show something like:
+
+`Could not find the 'buyer_id' column of 'payments' in the schema cache`
+
+then your existing `payments` table is missing the `buyer_id` column (or it was created with different column names).
+
+You can fix it (recommended) by adding the column:
+
+```sql
+alter table public.payments
+add column if not exists buyer_id uuid;
+
+create index if not exists payments_buyer_id_idx on public.payments(buyer_id);
+```
+
 ## API
 
 - `POST /payments/process` — processes a payment and records status

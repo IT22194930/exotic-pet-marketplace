@@ -39,6 +39,22 @@ start "Compliance Service" cmd /k npm run dev
 cd "%~dp0"
 timeout /t 2 /nobreak > nul
 
+echo Starting Payment Service on port 8005...
+cd "%~dp0services\payment-service"
+echo Installing dependencies...
+call npm install > nul 2>&1
+start "Payment Service" cmd /k "set ORDER_URL=http://localhost:8003& npm run dev"
+cd "%~dp0"
+timeout /t 2 /nobreak > nul
+
+echo Starting API Gateway on port 8000...
+cd "%~dp0services\api-gateway"
+echo Installing dependencies...
+call npm install > nul 2>&1
+start "API Gateway" cmd /k "set IDENTITY_URL=http://localhost:8001& set LISTING_URL=http://localhost:8002& set ORDER_URL=http://localhost:8003& set COMPLIANCE_URL=http://localhost:8004& set PAYMENT_URL=http://localhost:8005& npm run dev"
+cd "%~dp0"
+timeout /t 2 /nobreak > nul
+
 echo.
 echo All services started successfully!
 echo.
@@ -47,5 +63,7 @@ echo   - Identity Service:   http://localhost:8001
 echo   - Listing Service:    http://localhost:8002
 echo   - Order Service:      http://localhost:8003
 echo   - Compliance Service: http://localhost:8004
+echo   - Payment Service:    http://localhost:8005
+echo   - API Gateway:        http://localhost:8000
 echo.
 pause

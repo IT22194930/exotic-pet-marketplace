@@ -1,7 +1,6 @@
 const express = require("express");
 const axios = require("axios");
 const { sendMail } = require("../helpers/mailer");
-const { upsertPayment } = require("../helpers/payments");
 
 const router = express.Router();
 
@@ -15,6 +14,165 @@ async function getMe(authHeader) {
     timeout: 15000,
   });
   return r.data;
+}
+
+async function upsertPayment(supabase, row) {
+  if (!supabase) throw new Error("Supabase client not initialized");
+
+  const nowIso = new Date().toISOString();
+
+  const missingColRe = /Could not find the '([^']+)' column of 'payments'/i;
+  const noConstraintRe = /no unique or exclusion constraint matching the on conflict specification/i;
+
+  async function runWithAutoTrim({ label, opName, payload, run }) {
+    for (let i = 0; i < 10; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const { data, error } = await run(payload);
+      if (!error) return { data, error: null };
+
+      const msg = String(error.message || "");
+      const m = msg.match(missingColRe);
+      const missingCol = m?.[1];
+      const isSchemaMismatch = Boolean(missingCol) || /schema cache/i.test(msg);
+
+      if (!isSchemaMismatch) return { data: null, error };
+      if (!missingCol) return { data: null, error };
+
+      if (Object.prototype.hasOwnProperty.call(payload, missingCol)) {
+        delete payload[missingCol];
+        console.warn(
+          `[payments] schema mismatch (${label}/${opName}): dropped '${missingCol}' and retrying`,
+        );
+        continue;
+      }
+
+      return { data: null, error };
+    }
+
+    return { data: null, error: new Error("Supabase operation failed after retries") };
+  }
+
+  async function manualUpsert({ label, key, payload }) {
+    const orderValue = payload[key];
+    if (!orderValue) {
+      return {
+        data: null,
+        error: new Error(`Cannot write payment: missing '${key}'`),
+      };
+    }
+
+    // Try UPDATE first.
+    const updatePayload = { ...payload };
+    delete updatePayload[key];
+
+    const upd = await runWithAutoTrim({
+      label,
+      opName: "update",
+      payload: updatePayload,
+      run: async (p) =>
+        supabase
+          .from("payments")
+          .update(p)
+          .eq(key, orderValue)
+          .select("*"),
+    });
+
+    if (!upd.error && Array.isArray(upd.data) && upd.data.length > 0) {
+      return { data: upd.data[0], error: null };
+    }
+
+    // If update failed for a non-schema reason, stop.
+    if (upd.error && !missingColRe.test(String(upd.error.message || ""))) {
+      return upd;
+    }
+
+    // Otherwise INSERT.
+    const insPayload = { ...payload };
+    return runWithAutoTrim({
+      label,
+      opName: "insert",
+      payload: insPayload,
+      run: async (p) =>
+        supabase
+          .from("payments")
+          .insert([p])
+          .select("*"),
+    }).then((r) => ({
+      data: Array.isArray(r.data) ? r.data[0] : r.data,
+      error: r.error,
+    }));
+  }
+
+  async function upsertWithAutoTrim({ label, onConflict, initialPayload }) {
+    const payload = { ...initialPayload };
+
+    const up = await runWithAutoTrim({
+      label,
+      opName: "upsert",
+      payload,
+      run: async (p) =>
+        supabase
+          .from("payments")
+          .upsert([p], { onConflict })
+          .select("*")
+          .single(),
+    });
+
+    if (!up.error) return up;
+
+    const msg = String(up.error.message || "");
+    if (noConstraintRe.test(msg)) {
+      console.warn(
+        `[payments] payments table has no unique constraint on '${onConflict}' — falling back to update+insert`,
+      );
+      return manualUpsert({ label, key: onConflict, payload });
+    }
+
+    return up;
+  }
+
+  const variants = [
+    {
+      label: "snake_case",
+      onConflict: "order_id",
+      initialPayload: {
+        order_id: row.orderId,
+        buyer_id: row.buyerId,
+        amount: row.amount,
+        currency: row.currency || "LKR",
+        method: row.method,
+        status: row.status,
+        payment_ref: row.paymentRef || null,
+        updated_at: nowIso,
+      },
+    },
+    {
+      label: "camelCase",
+      onConflict: "orderId",
+      initialPayload: {
+        orderId: row.orderId,
+        buyerId: row.buyerId,
+        amount: row.amount,
+        currency: row.currency || "LKR",
+        method: row.method,
+        status: row.status,
+        paymentRef: row.paymentRef || null,
+        updatedAt: nowIso,
+      },
+    },
+  ];
+
+  let lastError;
+  for (const v of variants) {
+    // eslint-disable-next-line no-await-in-loop
+    const r = await upsertWithAutoTrim(v);
+    if (!r.error) return r.data;
+    lastError = r.error;
+  }
+
+  const err = new Error(lastError?.message || "Supabase upsert failed");
+  err.supabase = true;
+  throw err;
 }
 
 function normalizeCardNumber(raw) {
@@ -199,14 +357,26 @@ router.post("/status/bulk", async (req, res) => {
   }
 
   const cleanIds = orderIds.filter(Boolean);
-  const { data, error } = await supabase
+  // Prefer the secure filter-by-buyer query.
+  let data;
+  let error;
+  ({ data, error } = await supabase
     .from("payments")
     .select("order_id,status")
     .eq("buyer_id", me.id)
-    .in("order_id", cleanIds);
+    .in("order_id", cleanIds));
 
   if (error) {
-    return res.status(500).json({ error: "DB error", details: error.message });
+    const msg = String(error.message || "");
+    if (/Could not find the 'buyer_id' column of 'payments'/i.test(msg)) {
+      // Without buyer_id we cannot safely scope results to the caller.
+      return res.status(501).json({
+        error: "Payments table schema mismatch",
+        details:
+          "The Supabase 'payments' table is missing 'buyer_id', so status lookup is disabled for safety. Add the column (uuid) or recreate the table per payment-service README.",
+      });
+    }
+    return res.status(500).json({ error: "DB error", details: msg });
   }
 
   const byOrderId = {};

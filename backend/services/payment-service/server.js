@@ -4,8 +4,6 @@ const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 
 const paymentRoutes = require("./routes/payments");
-const { startConsumer } = require("./kafka/consumer");
-const { ensurePendingPaymentForOrderPlaced } = require("./helpers/payments");
 
 const app = express();
 app.use(express.json());
@@ -33,30 +31,3 @@ app.get("/health", (req, res) => {
 app.use("/payments", paymentRoutes);
 
 app.listen(PORT, () => console.log(`payment-service running on port ${PORT}`));
-
-// ── Kafka Consumer ────────────────────────────────────────────────────────────
-// Consume order-events to create an initial "pending" payment record when an order is created.
-startConsumer(
-  "payment-service-group",
-  ["order-events"],
-  async (topic, eventType, payload) => {
-    if (eventType !== "order.placed") return;
-
-    // Only create payments for successfully created orders.
-    if (payload?.status && payload.status !== "created") return;
-
-    const supabase = app.locals.supabase;
-    try {
-      await ensurePendingPaymentForOrderPlaced(supabase, payload);
-      console.log(`[kafka] Pending payment ensured for order ${payload.orderId}`);
-    } catch (err) {
-      console.error(
-        `[kafka] Failed to ensure pending payment for order ${payload?.orderId || "(unknown)"}:`,
-        err.message,
-      );
-    }
-  },
-).catch((err) => {
-  console.error("[kafka] payment-service consumer error:", err.message);
-  process.exit(1);
-});
