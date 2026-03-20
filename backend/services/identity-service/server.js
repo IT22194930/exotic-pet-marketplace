@@ -51,7 +51,7 @@ function authMiddleware(req, res, next) {
 }
 
 app.get("/health", (req, res) => {
-  res.json({ service: "identity-service", status: "working" });
+  res.json({ service: "identity-service", status: "ok" });
 });
 
 // ✅ Register (Supabase)
