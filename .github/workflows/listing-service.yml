@@ -109,15 +109,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID_LISTING }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID_LISTING }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_LISTING }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v2
         with:
           containerAppName: listing-service
-          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP_LISTING }}
+          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
           imageToDeploy: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:${{ github.sha }}
           registryUrl: ${{ env.REGISTRY }}
           registryUsername: ${{ secrets.DOCKERHUB_USERNAME }}
