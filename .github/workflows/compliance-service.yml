@@ -84,27 +84,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set lower-case owner
-        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to ACR with Docker
-        uses: docker/login-action@v3
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.AZURE_ACR_USERNAME }}
-          password: ${{ secrets.AZURE_ACR_PASSWORD }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Build and Push
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend/services/${{ env.SERVICE }}
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:${{ github.sha }}
+      - name: Build and Push to ACR
+        run: |
+          ACR_NAME=$(echo "${{ secrets.AZURE_ACR_REGISTRY_URL }}" | cut -d. -f1)
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:latest" \
+            --image "${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:${{ github.sha }}" \
+            --file Dockerfile \
+            backend/services/${{ env.SERVICE }}
 
   # Job 4: Deploy to Azure Container Apps
   deploy:
