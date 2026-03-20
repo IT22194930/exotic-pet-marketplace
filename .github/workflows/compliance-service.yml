@@ -102,8 +102,6 @@ jobs:
         with:
           context: ./backend/services/${{ env.SERVICE }}
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:${{ github.sha }}
