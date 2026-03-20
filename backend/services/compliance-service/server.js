@@ -40,23 +40,23 @@ app.listen(PORT, () =>
       ["order-events", "user-events", "listing-events"],
       async (topic, eventType, payload) => {
         switch (eventType) {
-      // ── Order events ──────────────────────────────────────────────────────
-      case "order.placed":
-        await audit("order", payload.orderId, "ORDER_PLACED", {
-          buyerId: payload.buyerId,
-          listingId: payload.listingId,
-          species: payload.species,
-          status: payload.status,
-          complianceAllowed: payload.complianceAllowed,
-        });
-        // Send order confirmation email only for approved orders
-        // (rejection email is already sent by the sync compliance check)
-        if (payload.status === "created" && payload.buyerEmail) {
-          sendMail({
-            to: payload.buyerEmail,
-            subject: `✅ Order Confirmed — #${payload.orderId}`,
-            text: `Your order #${payload.orderId} for "${payload.species}" has been placed successfully. Price: $${payload.price}`,
-            html: `
+          // ── Order events ──────────────────────────────────────────────────────
+          case "order.placed":
+            await audit("order", payload.orderId, "ORDER_PLACED", {
+              buyerId: payload.buyerId,
+              listingId: payload.listingId,
+              species: payload.species,
+              status: payload.status,
+              complianceAllowed: payload.complianceAllowed,
+            });
+            // Send order confirmation email only for approved orders
+            // (rejection email is already sent by the sync compliance check)
+            if (payload.status === "created" && payload.buyerEmail) {
+              sendMail({
+                to: payload.buyerEmail,
+                subject: `✅ Order Confirmed — #${payload.orderId}`,
+                text: `Your order #${payload.orderId} for "${payload.species}" has been placed successfully. Price: $${payload.price}`,
+                html: `
               <div style="font-family:sans-serif;max-width:600px;margin:auto">
                 <h2>🐾 Exotic Pet Marketplace</h2>
                 <h3 style="color:#27ae60">✅ Order Confirmed!</h3>
@@ -66,58 +66,58 @@ app.listen(PORT, () =>
                 <p>Your order has been placed and is pending fulfillment.</p>
               </div>
             `,
-          }).catch((e) =>
-            console.error(
-              "[kafka] Order confirmation email failed:",
-              e.message,
-            ),
-          );
+              }).catch((e) =>
+                console.error(
+                  "[kafka] Order confirmation email failed:",
+                  e.message,
+                ),
+              );
+            }
+            break;
+
+          case "order.cancelled":
+            await audit("order", payload.orderId, "ORDER_CANCELLED", {
+              buyerId: payload.buyerId,
+              listingId: payload.listingId,
+            });
+            break;
+
+          // ── User events ───────────────────────────────────────────────────────
+          case "user.registered":
+            await audit("user", payload.userId, "USER_REGISTERED", {
+              email: payload.email,
+              role: payload.role,
+            });
+            break;
+
+          case "seller.verified":
+            await audit("seller", payload.sellerId, "SELLER_VERIFIED", {
+              email: payload.email,
+            });
+            break;
+
+          // ── Listing events ────────────────────────────────────────────────────
+          case "listing.created":
+            await audit("listing", payload.listingId, "LISTING_CREATED", {
+              sellerId: payload.sellerId,
+              title: payload.title,
+              species: payload.species,
+              price: payload.price,
+            });
+            break;
+
+          case "listing.deleted":
+            await audit("listing", payload.listingId, "LISTING_DELETED", {
+              sellerId: payload.sellerId,
+            });
+            break;
+
+          default:
+            console.warn(
+              `[kafka] Unknown event "${eventType}" on topic "${topic}"`,
+            );
         }
-        break;
-
-      case "order.cancelled":
-        await audit("order", payload.orderId, "ORDER_CANCELLED", {
-          buyerId: payload.buyerId,
-          listingId: payload.listingId,
-        });
-        break;
-
-      // ── User events ───────────────────────────────────────────────────────
-      case "user.registered":
-        await audit("user", payload.userId, "USER_REGISTERED", {
-          email: payload.email,
-          role: payload.role,
-        });
-        break;
-
-      case "seller.verified":
-        await audit("seller", payload.sellerId, "SELLER_VERIFIED", {
-          email: payload.email,
-        });
-        break;
-
-      // ── Listing events ────────────────────────────────────────────────────
-      case "listing.created":
-        await audit("listing", payload.listingId, "LISTING_CREATED", {
-          sellerId: payload.sellerId,
-          title: payload.title,
-          species: payload.species,
-          price: payload.price,
-        });
-        break;
-
-      case "listing.deleted":
-        await audit("listing", payload.listingId, "LISTING_DELETED", {
-          sellerId: payload.sellerId,
-        });
-        break;
-
-      default:
-        console.warn(
-          `[kafka] Unknown event "${eventType}" on topic "${topic}"`,
-        );
-    }
-  },
+      },
     );
   } catch (err) {
     console.error("[kafka] compliance-service consumer error:", err.message);
