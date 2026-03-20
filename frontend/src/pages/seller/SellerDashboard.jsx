@@ -38,6 +38,13 @@ export default function SellerDashboard() {
   // Delete
   const [deleting, setDeleting] = useState(null);
 
+  // Restricted species
+  const [restrictedSpecies, setRestrictedSpecies] = useState([]);
+  const [speciesSuggestions, setSpeciesSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [editShowSuggestions, setEditShowSuggestions] = useState(false);
+  const [editSpeciesSuggestions, setEditSpeciesSuggestions] = useState([]);
+
   const me    = getAuthUser();
   const token = localStorage.getItem("jwt");
 
@@ -61,11 +68,43 @@ export default function SellerDashboard() {
 
   useEffect(() => { loadListings(); }, [loadListings]);
 
+  /* ── Fetch restricted species for validation ── */
+  const loadRestrictedSpecies = useCallback(async () => {
+    try {
+      const res = await fetch(`${LISTING_URL}/compliance/restricted-species`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && Array.isArray(data)) {
+        setRestrictedSpecies(data.map(s => s.species?.toLowerCase() || ''));
+      }
+    } catch (err) {
+      console.error("Failed to fetch restricted species:", err.message);
+    }
+  }, [token]);
+
+  useEffect(() => { loadRestrictedSpecies(); }, [loadRestrictedSpecies]);
+
+  /* ── Filter species suggestions as user types ── */
+  const filterSpeciesSuggestions = (input) => {
+    if (!input.trim()) return [];
+    const lower = input.toLowerCase();
+    return restrictedSpecies.filter(s => s.includes(lower)).slice(0, 5);
+  };
+
   /* ── Create listing (step 1) ── */
   const handleCreate = async (e) => {
     e.preventDefault();
     setSaving(true);
     setFormError("");
+
+    // Check if species is restricted
+    if (restrictedSpecies.includes(form.species.toLowerCase())) {
+      setFormError("This species is restricted and cannot be listed. Contact support for more information.");
+      setSaving(false);
+      return;
+    }
+
     try {
       const res  = await fetch(`${LISTING_URL}/listings`, {
         method: "POST",
@@ -92,8 +131,16 @@ export default function SellerDashboard() {
   };
 
   const openModal  = () => { setForm(EMPTY_FORM); setFormError(""); setCreatedListing(null); setShowModal(true); };
-  const closeModal = async () => { setCreatedListing(null); setShowModal(false); await loadListings(); };
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const closeModal = async () => { setCreatedListing(null); setShowModal(false); setShowSuggestions(false); await loadListings(); };
+  const handleChange = (e) => {
+    const newForm = { ...form, [e.target.name]: e.target.value };
+    setForm(newForm);
+    if (e.target.name === "species") {
+      const suggestions = filterSpeciesSuggestions(e.target.value);
+      setSpeciesSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    }
+  };
 
   /* ── Edit listing ── */
   const openEditModal = (listing) => {
@@ -107,14 +154,31 @@ export default function SellerDashboard() {
     setShowEditModal(false);
     setEditListing(null);
     setEditStep(1);
+    setEditShowSuggestions(false);
     await loadListings();
   };
-  const handleEditChange = (e) => setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  const handleEditChange = (e) => {
+    const newEditForm = { ...editForm, [e.target.name]: e.target.value };
+    setEditForm(newEditForm);
+    if (e.target.name === "species") {
+      const suggestions = filterSpeciesSuggestions(e.target.value);
+      setEditSpeciesSuggestions(suggestions);
+      setEditShowSuggestions(suggestions.length > 0);
+    }
+  };
 
   const handleEditSave = async (e) => {
     e.preventDefault();
     setEditSaving(true);
     setEditError("");
+
+    // Check if species is restricted
+    if (restrictedSpecies.includes(editForm.species.toLowerCase())) {
+      setEditError("This species is restricted and cannot be listed. Contact support for more information.");
+      setEditSaving(false);
+      return;
+    }
+
     try {
       const res = await fetch(`${LISTING_URL}/listings/${editListing.id}`, {
         method: "PUT",
@@ -414,8 +478,34 @@ export default function SellerDashboard() {
                   </div>
                   <div>
                     <label className={labelClass}>Species</label>
-                    <input name="species" value={form.species} onChange={handleChange} required
-                      placeholder="e.g. Ara ararauna" className={inputClass} />
+                    <div className="relative">
+                      <input name="species" value={form.species} onChange={handleChange} required
+                        placeholder="e.g. Ara ararauna" className={inputClass}
+                        onFocus={() => {
+                          const suggestions = filterSpeciesSuggestions(form.species);
+                          setSpeciesSuggestions(suggestions);
+                          setShowSuggestions(suggestions.length > 0);
+                        }}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                      />
+                      {showSuggestions && speciesSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a2f45] border border-white/10 rounded-lg shadow-lg z-10 overflow-hidden">
+                          {speciesSuggestions.map((suggestion, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setForm({ ...form, species: suggestion });
+                                setShowSuggestions(false);
+                              }}
+                              className="w-full text-left px-3.5 py-2.5 text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-300 transition-colors border-b border-white/5 last:border-b-0"
+                            >
+                              🔒 {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className={labelClass}>Type</label>
@@ -516,8 +606,34 @@ export default function SellerDashboard() {
                   </div>
                   <div>
                     <label className={labelClass}>Species</label>
-                    <input name="species" value={editForm.species} onChange={handleEditChange} required
-                      placeholder="e.g. Ara ararauna" className={inputClass} />
+                    <div className="relative">
+                      <input name="species" value={editForm.species} onChange={handleEditChange} required
+                        placeholder="e.g. Ara ararauna" className={inputClass}
+                        onFocus={() => {
+                          const suggestions = filterSpeciesSuggestions(editForm.species);
+                          setEditSpeciesSuggestions(suggestions);
+                          setEditShowSuggestions(suggestions.length > 0);
+                        }}
+                        onBlur={() => setTimeout(() => setEditShowSuggestions(false), 150)}
+                      />
+                      {editShowSuggestions && editSpeciesSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a2f45] border border-white/10 rounded-lg shadow-lg z-10 overflow-hidden">
+                          {editSpeciesSuggestions.map((suggestion, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setEditForm({ ...editForm, species: suggestion });
+                                setEditShowSuggestions(false);
+                              }}
+                              className="w-full text-left px-3.5 py-2.5 text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-300 transition-colors border-b border-white/5 last:border-b-0"
+                            >
+                              🔒 {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className={labelClass}>Type</label>
