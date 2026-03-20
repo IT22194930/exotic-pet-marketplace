@@ -84,22 +84,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ec1f7e19-75a5-4019-a454-3983e55be77a
+      - name: Login to ACR
+        run: |
+          echo "${{ secrets.AZURE_ACR_PASSWORD }}" | docker login -u "${{ secrets.AZURE_ACR_USERNAME }}" --password-stdin "${{ env.REGISTRY }}"
 
       - name: Build and Push to ACR
         run: |
-          ACR_NAME=$(echo "$REGISTRY" | cut -d. -f1)
-          az acr build \
-            --registry "$ACR_NAME" \
-            --image "${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:latest" \
-            --image "${{ env.IMAGE_PREFIX }}-${{ env.SERVICE }}:${{ github.sha }}" \
-            --file Dockerfile \
-            backend/services/${{ env.SERVICE }}
+          docker build -t "${{ env.REGISTRY }}/exotic-pet-marketplace-compliance-service:latest" \
+                       -t "${{ env.REGISTRY }}/exotic-pet-marketplace-compliance-service:${{ github.sha }}" \
+                       backend/services/compliance-service
+          docker push "${{ env.REGISTRY }}/exotic-pet-marketplace-compliance-service:latest"
+          docker push "${{ env.REGISTRY }}/exotic-pet-marketplace-compliance-service:${{ github.sha }}"
 
   # Job 4: Deploy to Azure Container Apps
   deploy:
