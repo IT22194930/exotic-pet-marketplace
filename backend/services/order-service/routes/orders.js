@@ -1,5 +1,6 @@
 const express = require("express");
 const axios = require("axios");
+const crypto = require("crypto");
 const { publish } = require("../kafka/producer");
 
 const router = express.Router();
@@ -8,7 +9,7 @@ const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 const LISTING_URL = process.env.LISTING_URL || "http://listing-service:8002";
 const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// Helpers
 
 // Rejects after ms milliseconds with a descriptive error
 function withTimeout(promise, ms, label) {
@@ -77,9 +78,11 @@ router.post("/", async (req, res) => {
     }
 
     const sellerId = listing.seller_id || listing.sellerId;
+    const orderId = crypto.randomUUID();
+
     const compliance = await withTimeout(
       checkCompliance(authHeader, {
-        orderId: "00000000-0000-0000-0000-000000000000",
+        orderId,
         species: listing.species,
         sellerId,
       }),
@@ -90,10 +93,11 @@ router.post("/", async (req, res) => {
     const status = compliance.allowed ? "created" : "rejected";
     const reason = compliance.allowed ? null : compliance.reason;
 
-    const { data: order, error } = await supabase
+    const { data: updatedOrder, error } = await supabase
       .from("orders")
       .insert([
         {
+          id: orderId,
           buyer_id: user.id,
           listing_id: listingId,
           title: listing.title || null,
@@ -114,7 +118,7 @@ router.post("/", async (req, res) => {
     // Publish order.placed event – compliance-service will handle notification
     // email and audit logging asynchronously via Kafka
     publish("order-events", "order.placed", {
-      orderId: order.id,
+      orderId: updatedOrder.id,
       buyerId: user.id,
       buyerEmail: user.email,
       listingId,
@@ -130,7 +134,7 @@ router.post("/", async (req, res) => {
 
     return res.status(201).json({
       message: status === "created" ? "Order created" : "Order rejected",
-      order,
+      order: updatedOrder,
       listing: {
         id: listingId,
         title: listing.title,
@@ -147,24 +151,20 @@ router.post("/", async (req, res) => {
     }
     const status = err.response?.status;
     if (status === 404) {
-      return res
-        .status(404)
-        .json({
-          error: "Listing not found",
-          details: err.response?.data || err.message,
-        });
+      return res.status(404).json({
+        error: "Listing not found",
+        details: err.response?.data || err.message,
+      });
     }
     if (
       status === 401 ||
       status === 403 ||
       err.message === "Missing Bearer token"
     ) {
-      return res
-        .status(401)
-        .json({
-          error: "Unauthorized",
-          details: err.response?.data || err.message,
-        });
+      return res.status(401).json({
+        error: "Unauthorized",
+        details: err.response?.data || err.message,
+      });
     }
     return res.status(status || 500).json({
       error: "Order failed",
@@ -301,19 +301,15 @@ router.get("/:id", async (req, res) => {
       status === 403 ||
       err.message === "Missing Bearer token"
     ) {
-      return res
-        .status(401)
-        .json({
-          error: "Unauthorized",
-          details: err.response?.data || err.message,
-        });
-    }
-    return res
-      .status(status || 500)
-      .json({
-        error: "Request failed",
+      return res.status(401).json({
+        error: "Unauthorized",
         details: err.response?.data || err.message,
       });
+    }
+    return res.status(status || 500).json({
+      error: "Request failed",
+      details: err.response?.data || err.message,
+    });
   }
 });
 
