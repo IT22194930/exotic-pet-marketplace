@@ -117,7 +117,8 @@ jobs:
             az containerapp update \
               --name compliance-service \
               --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_COMPLIANCE }} \
-              --image ${{ env.REGISTRY }}/exotic-pet-marketplace-compliance-service:${{ github.sha }}
+              --image ${{ env.REGISTRY }}/exotic-pet-marketplace-compliance-service:latest \
+              --set-env-vars "BUILD_ID=${{ github.run_id }}" "BUILD_SHA=${{ github.sha }}"
 
 
 
