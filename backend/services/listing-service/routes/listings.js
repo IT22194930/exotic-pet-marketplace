@@ -6,6 +6,7 @@ const { publish } = require("../kafka/producer");
 const router = express.Router();
 
 const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
+const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
 const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || "listing-images";
 
 // Multer in-memory upload
@@ -25,6 +26,35 @@ async function getUserFromToken(authHeader) {
   });
 
   return response.data; // {id, email, role, sellerVerified}
+}
+
+/**
+ * Checks whether a species is on the restricted list.
+ * Forwards the seller's auth token so compliance-service can authenticate.
+ * Returns { restricted: boolean } or throws on network/validation error.
+ */
+async function checkSpeciesCompliance(species, authHeader) {
+  const response = await axios.get(`${COMPLIANCE_URL}/compliance/restricted-species`, {
+    headers: { Authorization: authHeader }, // compliance-service requires a valid JWT
+    timeout: 10000,
+  });
+
+  const restrictedList = response.data;
+
+  // Validate response format
+  if (!Array.isArray(restrictedList)) {
+    throw new Error("Invalid response from compliance service: expected array");
+  }
+
+  const isRestricted = restrictedList.some((row) => {
+    // Defensive check: ensure row and row.species exist
+    if (!row || typeof row.species !== "string") {
+      return false;
+    }
+    return row.species.toLowerCase() === species.toLowerCase();
+  });
+
+  return { restricted: isRestricted };
 }
 
 // Routes
@@ -52,6 +82,25 @@ router.post("/", async (req, res) => {
         .status(400)
         .json({ error: "title, species, type, price are required" });
     }
+
+    // ── Compliance check: block restricted species at listing creation ────────
+    try {
+      const compliance = await checkSpeciesCompliance(species, req.headers.authorization);
+      if (compliance.restricted) {
+        return res.status(403).json({
+          error: "Restricted species",
+          details: `"${species}" is on the restricted species list and cannot be listed. Contact an admin if you have the required permits.`,
+        });
+      }
+    } catch (complianceErr) {
+      // If compliance-service is unreachable, fail safe — block the listing
+      console.error("[compliance] species check failed:", complianceErr.message);
+      return res.status(503).json({
+        error: "Compliance service unavailable",
+        details: "Could not verify species compliance. Please try again later.",
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const { data, error } = await supabase
       .from("listings")
