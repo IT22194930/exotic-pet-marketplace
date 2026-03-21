@@ -103,13 +103,6 @@ jobs:
     needs: build-and-push
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     steps:
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ec1f7e19-75a5-4019-a454-3983e55be77a
-
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v2
         with:
