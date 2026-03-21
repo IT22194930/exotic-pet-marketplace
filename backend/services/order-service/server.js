@@ -29,7 +29,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get("/health", (req, res) => {
-  res.json({ service: "order-service", status: "ok" });
+  res.json({ service: "order-service", status: "working" });
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────
