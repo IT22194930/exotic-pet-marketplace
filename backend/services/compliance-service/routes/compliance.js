@@ -126,13 +126,11 @@ router.post("/check", async (req, res) => {
 /**
  * GET /compliance/restricted-species
  * Returns all restricted species entries.
+ * Accessible to any authenticated user (sellers need this for listing validation).
  */
 router.get("/restricted-species", async (req, res) => {
   try {
-    const requester = await getUserFromToken(req.headers.authorization);
-    if (requester.role !== "admin") {
-      return res.status(403).json({ error: "Admin access required" });
-    }
+    await getUserFromToken(req.headers.authorization);
 
     const { data, error } = await supabase
       .from("restricted_species")
