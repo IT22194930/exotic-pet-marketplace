@@ -19,7 +19,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 8004;
 
 app.get("/health", (req, res) => {
-  res.json({ service: "compliance-service", status: "working final" });
+  res.json({ service: "compliance-service", status: "working noww" });
 });
 
 app.use("/compliance", complianceRoutes);
