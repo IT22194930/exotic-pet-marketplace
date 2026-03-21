@@ -127,7 +127,7 @@ services:
     volumes:
       - ./services/identity-service:/app
       - /app/node_modules
-    command: npm run dev
+    command: sh -c "npm install && npm run dev"
     environment:
       - PORT=8001
       - JWT_SECRET=${JWT_SECRET}
@@ -197,7 +197,7 @@ services:
     volumes:
       - ./services/compliance-service:/app
       - /app/node_modules
-    command: npm run dev
+    command: sh -c "npm install && npm run dev"
     environment:
       - PORT=8004
       - IDENTITY_URL=http://identity-service:8001

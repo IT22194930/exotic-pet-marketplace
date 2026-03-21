@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const supabase = require("../config/supabase");
 const { getUserFromToken } = require("../helpers/auth");
-const { audit } = require("../helpers/audit");
+
 const { sendMail } = require("../helpers/mailer");
 
 const router = Router();
@@ -22,11 +22,7 @@ router.post("/order-confirmed", async (req, res) => {
 
   try {
     const requester = await getUserFromToken(req.headers.authorization);
-    await audit("order", orderId, "NOTIFY_REQUESTED", {
-      byUserId: requester.id,
-      channel,
-      recipient,
-    });
+
 
     const { data, error } = await supabase
       .from("notifications")
@@ -35,9 +31,7 @@ router.post("/order-confirmed", async (req, res) => {
       .single();
 
     if (error) {
-      await audit("order", orderId, "NOTIFY_FAILED_DB", {
-        error: error.message,
-      });
+
       return res
         .status(500)
         .json({ error: "DB error", details: error.message });
@@ -62,23 +56,15 @@ router.post("/order-confirmed", async (req, res) => {
             </div>
           `,
         });
-        await audit("order", orderId, "NOTIFY_EMAIL_SENT", {
-          recipient,
-          emailMessageId,
-        });
+
       } catch (mailErr) {
-        await audit("order", orderId, "NOTIFY_EMAIL_FAILED", {
-          error: mailErr.message,
-        });
+
         // Non-fatal: notification already saved to DB
         console.error("SMTP error:", mailErr.message);
       }
     }
 
-    await audit("order", orderId, "NOTIFY_SENT", {
-      notificationId: data.id,
-      channel,
-    });
+
 
     res.json({
       message: "Notification sent",

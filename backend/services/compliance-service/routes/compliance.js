@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const supabase = require("../config/supabase");
 const { getUserFromToken } = require("../helpers/auth");
-const { audit } = require("../helpers/audit");
+
 const { sendMail } = require("../helpers/mailer");
 
 const router = Router();
@@ -26,11 +26,7 @@ router.post("/check", async (req, res) => {
 
   try {
     const requester = await getUserFromToken(req.headers.authorization);
-    await audit("order", orderId, "COMPLIANCE_CHECK_REQUESTED", {
-      byUserId: requester.id,
-      species,
-      sellerId,
-    });
+
 
     // Is species restricted?
     const { data: restrictedRow, error: rErr } = await supabase
@@ -40,9 +36,6 @@ router.post("/check", async (req, res) => {
       .maybeSingle();
 
     if (rErr) {
-      await audit("order", orderId, "COMPLIANCE_CHECK_FAILED_DB", {
-        error: rErr.message,
-      });
       return res.status(500).json({ error: "DB error", details: rErr.message });
     }
 
@@ -51,9 +44,7 @@ router.post("/check", async (req, res) => {
 
     // If restricted => block unless requester is admin
     if (restricted && requester.role !== "admin") {
-      await audit("order", orderId, "COMPLIANCE_REJECTED", {
-        reason: "RESTRICTED_SPECIES_REQUIRES_ADMIN_REVIEW",
-      });
+
 
       // Send rejection email
       if (emailTo) {
@@ -84,7 +75,7 @@ router.post("/check", async (req, res) => {
       });
     }
 
-    await audit("order", orderId, "COMPLIANCE_APPROVED", { restricted });
+
 
     // Send approval email
     if (emailTo) {
@@ -172,14 +163,7 @@ router.post("/restricted-species", async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
 
-    try {
-      await audit("restricted_species", data.id, "RESTRICTED_SPECIES_ADDED", {
-        species: data.species,
-        by: requester.id,
-      });
-    } catch (auditErr) {
-      console.error("Audit failed:", auditErr.message, auditErr.response);
-    }
+
 
     return res.status(201).json(data);
   } catch (err) {
@@ -218,14 +202,7 @@ router.put("/restricted-species/:id", async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "Not found" });
 
-    try {
-      await audit("restricted_species", id, "RESTRICTED_SPECIES_UPDATED", {
-        species: data.species,
-        by: requester.id,
-      });
-    } catch (auditErr) {
-      console.error("Audit failed:", auditErr.message, auditErr.response);
-    }
+
 
     return res.json(data);
   } catch (err) {
@@ -265,14 +242,7 @@ router.delete("/restricted-species/:id", async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
 
-    try {
-      await audit("restricted_species", id, "RESTRICTED_SPECIES_DELETED", {
-        species: existing.species,
-        by: requester.id,
-      });
-    } catch (auditErr) {
-      console.error("Audit failed:", auditErr.message, auditErr.response);
-    }
+
 
     return res.json({ success: true });
   } catch (err) {

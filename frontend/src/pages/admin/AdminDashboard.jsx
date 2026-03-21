@@ -1,6 +1,6 @@
 import { useState } from "react";
 import AdminUsersSection from "./AdminUsersSection";
-import AdminAuditSection from "./AdminAuditSection";
+
 import AdminComplianceSection from "./AdminComplianceSection";
 import AdminRestrictedSpeciesSection from "./AdminRestrictedSpeciesSection";
 import AdminNotifySection from "./AdminNotifySection";
@@ -22,21 +22,7 @@ const NAV_ITEMS = [
     ),
     accent: "purple",
   },
-  {
-    id: "audit",
-    label: "Audit Logs",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        className="w-5 h-5"
-      >
-        <path d="M19 3H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
-      </svg>
-    ),
-    accent: "sky",
-  },
+
   {
     id: "compliance",
     label: "Compliance",
@@ -312,7 +298,7 @@ export default function AdminDashboard() {
         {/* Section content */}
         <div className="flex-1 p-6 md:p-10 max-w-screen-xl mx-auto w-full">
           {activeSection === "users" && <AdminUsersSection />}
-          {activeSection === "audit" && <AdminAuditSection />}
+
           {activeSection === "compliance" && <AdminComplianceSection />}
           {activeSection === "species" && <AdminRestrictedSpeciesSection />}
           {activeSection === "notify" && <AdminNotifySection />}
