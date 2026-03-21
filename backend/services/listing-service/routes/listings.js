@@ -8,13 +8,13 @@ const router = express.Router();
 const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || "listing-images";
 
-// ── Multer in-memory upload ───────────────────────────────────────────────────
+// Multer in-memory upload
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// Helpers
 async function getUserFromToken(authHeader) {
   if (!authHeader?.startsWith("Bearer ")) {
     throw new Error("Missing Bearer token");
@@ -27,7 +27,7 @@ async function getUserFromToken(authHeader) {
   return response.data; // {id, email, role, sellerVerified}
 }
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+// Routes
 
 // ✅ Create listing (seller only) WITHOUT image
 router.post("/", async (req, res) => {
