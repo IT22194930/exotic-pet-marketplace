@@ -117,7 +117,7 @@ jobs:
             az containerapp update \
               --name compliance-service \
               --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_COMPLIANCE }} \
-              --image ${{ env.REGISTRY }}/exotic-pet-marketplace-compliance-service:latest
+              --image ${{ e nv.REGISTRY }}/exotic-pet-marketplace-compliance-service:${{ github.sha }}
 
 
 
