@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { createClient } = require("@supabase/supabase-js");
 const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 const { publish } = require("./kafka/producer");
 
 const app = express();
@@ -53,6 +55,9 @@ function authMiddleware(req, res, next) {
 app.get("/health", (req, res) => {
   res.json({ service: "identity-service", status: "ok" });
 });
+
+// Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ✅ Register (Supabase)
 app.post("/auth/register", async (req, res) => {

@@ -34,7 +34,7 @@ app.use("/listings", limiter);
 app.use("/orders", limiter);
 app.use("/compliance", limiter);
 app.use("/notify", limiter);
-app.use("/audit", limiter);
+
 
 // ── Aggregated health check ───────────────────────────────────────────────────
 app.get("/health", async (req, res) => {
@@ -84,7 +84,7 @@ app.get("/", (req, res) => {
       { prefix: "/orders  (or /api/orders)", upstream: ORDER_URL },
       { prefix: "/compliance  (or /api/compliance)", upstream: COMPLIANCE_URL },
       { prefix: "/notify  (or /api/notify)", upstream: COMPLIANCE_URL },
-      { prefix: "/audit  (or /api/audit)", upstream: COMPLIANCE_URL },
+
     ],
   });
 });
@@ -137,16 +137,16 @@ app.use(
   makeProxy(COMPLIANCE_URL, "/api/compliance", "/compliance"),
 );
 app.use("/api/notify", makeProxy(COMPLIANCE_URL, "/api/notify", "/notify"));
-app.use("/api/audit", makeProxy(COMPLIANCE_URL, "/api/audit", "/audit"));
+
 app.use("/compliance", makeProxy(COMPLIANCE_URL, "/compliance", "/compliance"));
 app.use("/notify", makeProxy(COMPLIANCE_URL, "/notify", "/notify"));
-app.use("/audit", makeProxy(COMPLIANCE_URL, "/audit", "/audit"));
+
 
 // ── 404 fallthrough ───────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     error: "Route not found",
-    hint: "Use /auth, /listings, /orders, /compliance, /notify, /audit — or prefix with /api (e.g. /api/auth/login)",
+    hint: "Use /auth, /listings, /orders, /compliance, /notify — or prefix with /api (e.g. /api/auth/login)",
     method: req.method,
     path: req.path,
   });

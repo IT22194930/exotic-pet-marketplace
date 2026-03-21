@@ -1,15 +1,15 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 
 // Initialise Supabase
 require("./config/supabase");
 
 const complianceRoutes = require("./routes/compliance");
 const notifyRoutes = require("./routes/notify");
-const auditRoutes = require("./routes/audit");
 const { startConsumer } = require("./kafka/consumer");
-const { audit } = require("./helpers/audit");
 const { sendMail } = require("./helpers/mailer");
 
 const app = express();
@@ -22,9 +22,11 @@ app.get("/health", (req, res) => {
   res.json({ service: "compliance-service", status: "ok" });
 });
 
+// Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.use("/compliance", complianceRoutes);
 app.use("/notify", notifyRoutes);
-app.use("/audit", auditRoutes);
 
 app.listen(PORT, () =>
   console.log(`compliance-service running on port ${PORT}`),
@@ -42,13 +44,6 @@ app.listen(PORT, () =>
         switch (eventType) {
           // ── Order events ──────────────────────────────────────────────────────
           case "order.placed":
-            await audit("order", payload.orderId, "ORDER_PLACED", {
-              buyerId: payload.buyerId,
-              listingId: payload.listingId,
-              species: payload.species,
-              status: payload.status,
-              complianceAllowed: payload.complianceAllowed,
-            });
             // Send order confirmation email only for approved orders
             // (rejection email is already sent by the sync compliance check)
             if (payload.status === "created" && payload.buyerEmail) {
@@ -76,40 +71,20 @@ app.listen(PORT, () =>
             break;
 
           case "order.cancelled":
-            await audit("order", payload.orderId, "ORDER_CANCELLED", {
-              buyerId: payload.buyerId,
-              listingId: payload.listingId,
-            });
             break;
 
           // ── User events ───────────────────────────────────────────────────────
           case "user.registered":
-            await audit("user", payload.userId, "USER_REGISTERED", {
-              email: payload.email,
-              role: payload.role,
-            });
             break;
 
           case "seller.verified":
-            await audit("seller", payload.sellerId, "SELLER_VERIFIED", {
-              email: payload.email,
-            });
             break;
 
           // ── Listing events ────────────────────────────────────────────────────
           case "listing.created":
-            await audit("listing", payload.listingId, "LISTING_CREATED", {
-              sellerId: payload.sellerId,
-              title: payload.title,
-              species: payload.species,
-              price: payload.price,
-            });
             break;
 
           case "listing.deleted":
-            await audit("listing", payload.listingId, "LISTING_DELETED", {
-              sellerId: payload.sellerId,
-            });
             break;
 
           default:

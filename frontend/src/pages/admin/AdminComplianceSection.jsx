@@ -61,8 +61,8 @@ const STEPS = [
   {
     icon: "4",
     color: "emerald",
-    title: "Notification & Audit",
-    body: "A result email is dispatched (if buyer email provided) and the event is written to the audit log.",
+    title: "Notification",
+    body: "A result email is dispatched (if buyer email provided) with the compliance decision.",
   },
 ];
 
@@ -283,9 +283,7 @@ export default function AdminComplianceSection() {
                 </div>
               )}
 
-              <p className="mt-3 text-[0.65rem] text-slate-700 text-center">
-                This check has been recorded in the audit log.
-              </p>
+
             </div>
           ) : (
             <div className="rounded-2xl border border-white/[0.05] bg-[#0a1628] p-8 flex flex-col items-center justify-center flex-1 min-h-[320px] text-center gap-3">
