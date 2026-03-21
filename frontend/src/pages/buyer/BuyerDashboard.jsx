@@ -139,7 +139,7 @@ export default function BuyerDashboard() {
                   </tr>
                 ) : (
                   orders.map((o) => (
-                    <tr key={o.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                    <tr key={o.id} className="border-b border-white/4 hover:bg-white/2 transition-colors">
                       <td className="px-6 py-4 font-semibold text-slate-100">{o.title || "—"}</td>
                       <td className="px-6 py-4 text-slate-300 capitalize">{o.species || "—"}</td>
                       <td className="px-6 py-4 text-emerald-400 font-semibold">
