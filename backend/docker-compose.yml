@@ -60,6 +60,7 @@ services:
       - listing-service
       - order-service
       - compliance-service
+      - payment-service
     volumes:
       - ./services/api-gateway:/app
       - /app/node_modules
@@ -70,6 +71,32 @@ services:
       - LISTING_URL=http://listing-service:8002
       - ORDER_URL=http://order-service:8003
       - COMPLIANCE_URL=http://compliance-service:8004
+      - PAYMENT_URL=http://payment-service:8005
+    networks:
+      - marketplace-net
+
+  payment-service:
+    build: ./services/payment-service
+    container_name: payment-service
+    ports:
+      - "8005:8005"
+    depends_on:
+      - order-service
+    volumes:
+      - ./services/payment-service:/app
+      - /app/node_modules
+    command: npm run dev
+    environment:
+      - PORT=8005
+      - ORDER_URL=http://order-service:8003
+      - IDENTITY_URL=http://identity-service:8001
+      - SUPABASE_URL=https://plruuzubfulccriopggs.supabase.co
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
     networks:
       - marketplace-net
   # ── Topic pre-creator (runs once, exits) ─────────────────────────────────
