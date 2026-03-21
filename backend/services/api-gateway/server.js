@@ -13,6 +13,7 @@ const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 const LISTING_URL = process.env.LISTING_URL || "http://listing-service:8002";
 const ORDER_URL = process.env.ORDER_URL || "http://order-service:8003";
 const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
+const PAYMENT_URL = process.env.PAYMENT_URL || "http://payment-service:8005";
 
 // ── Global middleware ─────────────────────────────────────────────────────────
 app.use(cors());
@@ -34,7 +35,8 @@ app.use("/listings", limiter);
 app.use("/orders", limiter);
 app.use("/compliance", limiter);
 app.use("/notify", limiter);
-
+app.use("/audit", limiter);
+app.use("/payments", limiter);
 
 // ── Aggregated health check ───────────────────────────────────────────────────
 app.get("/health", async (req, res) => {
@@ -43,6 +45,7 @@ app.get("/health", async (req, res) => {
     { name: "listing-service", url: LISTING_URL },
     { name: "order-service", url: ORDER_URL },
     { name: "compliance-service", url: COMPLIANCE_URL },
+    { name: "payment-service", url: PAYMENT_URL },
   ];
 
   const results = await Promise.allSettled(
@@ -84,7 +87,8 @@ app.get("/", (req, res) => {
       { prefix: "/orders  (or /api/orders)", upstream: ORDER_URL },
       { prefix: "/compliance  (or /api/compliance)", upstream: COMPLIANCE_URL },
       { prefix: "/notify  (or /api/notify)", upstream: COMPLIANCE_URL },
-
+      { prefix: "/audit  (or /api/audit)", upstream: COMPLIANCE_URL },
+      { prefix: "/payments  (or /api/payments)", upstream: PAYMENT_URL },
     ],
   });
 });
@@ -140,7 +144,14 @@ app.use("/api/notify", makeProxy(COMPLIANCE_URL, "/api/notify", "/notify"));
 
 app.use("/compliance", makeProxy(COMPLIANCE_URL, "/compliance", "/compliance"));
 app.use("/notify", makeProxy(COMPLIANCE_URL, "/notify", "/notify"));
+app.use("/audit", makeProxy(COMPLIANCE_URL, "/audit", "/audit"));
 
+// Payment Service
+app.use(
+  "/api/payments",
+  makeProxy(PAYMENT_URL, "/api/payments", "/payments"),
+);
+app.use("/payments", makeProxy(PAYMENT_URL, "/payments", "/payments"));
 
 // ── 404 fallthrough ───────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -159,4 +170,5 @@ app.listen(PORT, () => {
   console.log(`  Listing    → ${LISTING_URL}`);
   console.log(`  Order      → ${ORDER_URL}`);
   console.log(`  Compliance → ${COMPLIANCE_URL}`);
+  console.log(`  Payment    → ${PAYMENT_URL}`);
 });

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { getAuthUser } from "../../utils/auth";
 
 const ORDER_URL = import.meta.env.VITE_API_GATEWAY_URL;
@@ -13,6 +14,7 @@ const STATUS_STYLES = {
 };
 
 export default function BuyerDashboard() {
+  const navigate = useNavigate();
   const [orders, setOrders]     = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
@@ -71,11 +73,18 @@ export default function BuyerDashboard() {
     }
   };
 
+  const handlePay = (orderId) => {
+    navigate(`/payment/${orderId}`);
+  };
+
   const stats = [
     { label: "Total Orders",    value: orders.length },
     { label: "Active",          value: orders.filter(o => o.status === "created").length },
     { label: "Cancelled",       value: orders.filter(o => o.status === "cancelled").length },
   ];
+
+  const payButtonClass = "px-3.5 py-1.5 text-xs font-semibold rounded-lg border text-emerald-400 border-emerald-500/20 bg-emerald-500/[0.07] hover:bg-emerald-500/15 transition-all disabled:opacity-50";
+  const cancelButtonClass = "px-3.5 py-1.5 text-xs font-semibold rounded-lg border text-red-300 border-red-500/20 bg-red-500/[0.06] hover:bg-red-500/10 transition-all disabled:opacity-50";
 
   return (
     <div className="min-h-screen bg-[#0a0f1a] pt-24 pb-16 px-6 md:px-10">
@@ -132,9 +141,9 @@ export default function BuyerDashboard() {
                   <tr>
                     <td colSpan={7} className="px-6 py-16 text-center text-slate-500">
                       No orders yet.{" "}
-                      <a href="/shop" className="text-emerald-400 hover:text-emerald-300 underline">
+                      <Link to="/shop" className="text-emerald-400 hover:text-emerald-300 underline">
                         Browse the Shop →
-                      </a>
+                      </Link>
                     </td>
                   </tr>
                 ) : (
@@ -158,13 +167,22 @@ export default function BuyerDashboard() {
                       </td>
                       <td className="px-6 py-4">
                         {o.status === "created" ? (
-                          <button
-                            onClick={() => handleCancel(o.id)}
-                            disabled={cancelling === o.id}
-                            className="px-3 py-1.5 text-xs font-semibold text-red-400 rounded-lg border border-red-500/25 bg-red-500/10 hover:bg-red-500/20 hover:text-red-300 transition-all disabled:opacity-50"
-                          >
-                            {cancelling === o.id ? "Cancelling…" : "Cancel"}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handlePay(o.id)}
+                              disabled={cancelling === o.id}
+                              className={payButtonClass}
+                            >
+                              Pay
+                            </button>
+                            <button
+                              onClick={() => handleCancel(o.id)}
+                              disabled={cancelling === o.id}
+                              className={cancelButtonClass}
+                            >
+                              {cancelling === o.id ? "Cancelling…" : "Cancel"}
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-slate-700 text-xs">—</span>
                         )}
