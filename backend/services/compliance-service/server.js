@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
-// Initialise Supabase (validates env vars at startup)
+// Initialise Supabase
 require("./config/supabase");
 
 const complianceRoutes = require("./routes/compliance");
@@ -19,7 +19,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 8004;
 
 app.get("/health", (req, res) => {
-  res.json({ service: "compliance-service", status: "working fineeee" });
+  res.json({ service: "compliance-service", status: "100%" });
 });
 
 app.use("/compliance", complianceRoutes);
