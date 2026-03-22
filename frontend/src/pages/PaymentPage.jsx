@@ -3,12 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
-function formatLkr(amount) {
+function formatUSD(amount) {
   const value = Number(amount || 0);
-  if (!Number.isFinite(value)) return "LKR 0.00";
-  return new Intl.NumberFormat("en-LK", {
+  if (!Number.isFinite(value)) return "USD 0.00";
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "LKR",
+    currency: "USD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
@@ -136,7 +136,7 @@ export default function PaymentPage() {
     };
   }, [order]);
 
-  const amountText = formatLkr(summary.total);
+  const amountText = formatUSD(summary.total);
 
   const formValues = useMemo(
     () => ({ cardHolderName, cardNumber, expiryDate, cvv }),
@@ -265,8 +265,8 @@ export default function PaymentPage() {
                     <tr key={idx} className="border-b border-white/4 hover:bg-white/2 transition-colors">
                       <td className="px-6 py-4 font-semibold text-slate-100">{it.name}</td>
                       <td className="px-6 py-4 text-slate-300">{it.quantity}</td>
-                      <td className="px-6 py-4 text-slate-300">{formatLkr(it.unitPrice)}</td>
-                      <td className="px-6 py-4 text-emerald-300 font-semibold">{formatLkr(it.subtotal)}</td>
+                      <td className="px-6 py-4 text-slate-300">{formatUSD(it.unitPrice)}</td>
+                      <td className="px-6 py-4 text-emerald-300 font-semibold">{formatUSD(it.subtotal)}</td>
                     </tr>
                   ))}
                 </tbody>
