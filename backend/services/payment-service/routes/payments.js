@@ -3,9 +3,9 @@ const axios = require("axios");
 
 const router = express.Router();
 
-const ORDER_URL = process.env.ORDER_URL || "http://order-service:8003";
-const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
-const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
+const ORDER_URL = process.env.ORDER_URL;
+const IDENTITY_URL = process.env.IDENTITY_URL;
+const COMPLIANCE_URL = process.env.COMPLIANCE_URL;
 
 async function notifyPaymentSuccess(authHeader, { orderId, recipient, amount, method }) {
   if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing Bearer token");
