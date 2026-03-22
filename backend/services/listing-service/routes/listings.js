@@ -76,7 +76,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const { title, species, type, price } = req.body;
+    const { title, species, type, price, description } = req.body;
     if (!title || !species || !type || price == null) {
       return res
         .status(400)
@@ -112,6 +112,7 @@ router.post("/", async (req, res) => {
           type,
           price: Number(price),
           status: "available",
+          description: description || null,
         },
       ])
       .select("*")
@@ -278,10 +279,11 @@ router.put("/:id", async (req, res) => {
       return res.status(403).json({ error: "Not your listing" });
 
     // Extract only permitted fields
-    const { title, species, type, price, removeImage } = req.body;
+    const { title, species, type, price, status, description, removeImage } = req.body;
     const updates = {};
     if (title !== undefined) updates.title = title;
     if (species !== undefined) updates.species = species;
+    if (description !== undefined) updates.description = description;
     if (type !== undefined) {
       if (!["exotic", "livestock"].includes(type)) {
         return res
@@ -296,6 +298,14 @@ router.put("/:id", async (req, res) => {
         return res.status(400).json({ error: "price must be a number" });
       }
       updates.price = numPrice;
+    }
+    if (status !== undefined) {
+      if (!["available", "unavailable", "sold", "pending"].includes(status)) {
+        return res
+          .status(400)
+          .json({ error: "status must be 'available', 'unavailable', 'sold', or 'pending'" });
+      }
+      updates.status = status;
     }
     if (removeImage === true) {
       updates.image_url = null;

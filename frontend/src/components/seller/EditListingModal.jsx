@@ -18,6 +18,7 @@ export default function EditListingModal({
     species: "",
     type: "exotic",
     price: "",
+    description: "",
   });
   const [editListing, setEditListing] = useState(null);
   const [editSaving, setEditSaving] = useState(false);
@@ -36,6 +37,7 @@ export default function EditListingModal({
         species: listing.species,
         type: listing.type,
         price: listing.price,
+        description: listing.description || "",
       });
       setEditListing(listing);
       setEditStep(1);
@@ -73,6 +75,7 @@ export default function EditListingModal({
           species: editForm.species,
           type: editForm.type,
           price: Number(editForm.price),
+          description: editForm.description,
         }),
       });
       const data = await res.json();
@@ -159,6 +162,17 @@ export default function EditListingModal({
                 className={inputClass}
                 labelClassName={labelClass}
               />
+              <div>
+                <label className={labelClass}>Description (Optional)</label>
+                <textarea
+                  name="description"
+                  value={editForm.description}
+                  onChange={handleEditChange}
+                  placeholder="Describe the pet: age, health, temperament, care requirements..."
+                  className={`${inputClass} min-h-25 resize-y`}
+                  rows={4}
+                />
+              </div>
               <div>
                 <label className={labelClass}>Type</label>
                 <select
