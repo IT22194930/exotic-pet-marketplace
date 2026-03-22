@@ -9,6 +9,36 @@ const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 const LISTING_URL = process.env.LISTING_URL || "http://listing-service:8002";
 const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
 
+async function initPendingPayment({ supabase, orderId, buyerId, amount }) {
+  // payments table schema (as provided by the user):
+  //   orderId (uuid), buyerId (uuid), amount (double), status (text)
+  // Primary key is (id, orderId), so orderId is not unique by itself.
+  // We therefore do a best-effort "select then insert" to avoid duplicates.
+
+  const { data: existing, error: findErr } = await supabase
+    .from("payments")
+    .select("id,orderId,status")
+    .eq("orderId", orderId)
+    .eq("buyerId", buyerId)
+    .order("id", { ascending: false })
+    .limit(1);
+
+  if (!findErr && Array.isArray(existing) && existing.length > 0) return;
+
+  const { error: insErr } = await supabase
+    .from("payments")
+    .insert([
+      {
+        orderId,
+        buyerId,
+        amount,
+        status: "pending",
+      },
+    ]);
+
+  if (insErr) throw insErr;
+}
+
 // Helpers
 
 // Rejects after ms milliseconds with a descriptive error
@@ -114,6 +144,26 @@ router.post("/", async (req, res) => {
       return res
         .status(500)
         .json({ error: "DB error", details: error.message });
+
+    // Create payment row automatically (pending) when order is created.
+    // Supports both snake_case and camelCase payments tables.
+    if (status === "created") {
+      try {
+        await initPendingPayment({
+          supabase,
+          orderId: updatedOrder.id,
+          buyerId: user.id,
+          amount: Number(updatedOrder.price || 0),
+        });
+      } catch (payErr) {
+        // Best effort rollback to keep system consistent.
+        await supabase.from("orders").delete().eq("id", updatedOrder.id);
+        return res.status(500).json({
+          error: "Failed to initialize payment",
+          details: payErr.message,
+        });
+      }
+    }
 
     // Publish order.placed event – compliance-service will handle notification
     // email and audit logging asynchronously via Kafka
@@ -257,6 +307,74 @@ router.patch("/:id/cancel", async (req, res) => {
     );
 
     return res.json({ message: "Order cancelled", order: cancelled });
+  } catch (err) {
+    return res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
+  }
+});
+
+// PATCH /orders/:id/complete — buyer marks their own order as complete (after payment)
+router.patch("/:id/complete", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const supabase = req.app.locals.supabase;
+
+  try {
+    const user = await getMe(authHeader);
+
+    const { data: order, error: findErr } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+
+    if (findErr || !order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    if (order.buyer_id !== user.id) {
+      return res.status(403).json({ error: "You can only complete your own orders" });
+    }
+
+    if (order.status !== "created") {
+      return res.status(409).json({
+        error: `Cannot complete an order with status "${order.status}"`,
+      });
+    }
+
+    // Different environments may use different allowed values in the DB CHECK constraint.
+    // Try the most likely candidates in order.
+    const candidates = ["completed", "complete", "paid", "delivered"];
+    let lastErr;
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const nextStatus of candidates) {
+      // eslint-disable-next-line no-await-in-loop
+      const { data: updated, error: updateErr } = await supabase
+        .from("orders")
+        .update({ status: nextStatus })
+        .eq("id", req.params.id)
+        .select("*")
+        .single();
+
+      if (!updateErr) {
+        return res.json({ message: "Order marked complete", order: updated });
+      }
+
+      lastErr = updateErr;
+      const msg = String(updateErr.message || "");
+      // If the failure is due to the status CHECK constraint, try the next candidate.
+      if (/orders_status_check/i.test(msg)) continue;
+      // Otherwise, fail fast.
+      return res.status(500).json({ error: "DB error", details: msg });
+    }
+
+    return res.status(500).json({
+      error: "DB error",
+      details: String(lastErr?.message || lastErr || "Failed to update order status"),
+      attemptedStatuses: candidates,
+    });
   } catch (err) {
     return res.status(401).json({
       error: "Unauthorized",
