@@ -12,9 +12,9 @@ export default function ListingDetailModal({ listing, onClose, onPurchase, showP
   return (
     <div
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto"
     >
-      <div className="relative max-w-3xl w-full bg-[#0f1a2e] rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-scale-in">
+      <div className="relative max-w-3xl w-full max-h-[90vh] overflow-y-auto bg-[#0f1a2e] rounded-2xl border border-white/10 shadow-2xl animate-scale-in">
         {/* Close button */}
         <button
           onClick={onClose}

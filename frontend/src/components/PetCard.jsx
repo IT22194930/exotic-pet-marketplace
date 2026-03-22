@@ -9,7 +9,7 @@ const STATUS_COLORS = {
 };
 
 export default function PetCard({ listing, onPurchase, onClick }) {
-  const { id, title, species, type, price, status, image_url, created_at, description } = listing;
+  const { id, title, species, type, price, status, image_url, created_at } = listing;
 
   const [purchasing, setPurchasing] = React.useState(false);
 
@@ -68,12 +68,6 @@ export default function PetCard({ listing, onPurchase, onClick }) {
             </span>
           )}
         </p>
-
-        {description && (
-          <p className="text-xs text-slate-400 mb-4 line-clamp-2 leading-relaxed">
-            {description}
-          </p>
-        )}
 
         {/* Footer row */}
         <div className="mt-auto flex items-end justify-between gap-3">
