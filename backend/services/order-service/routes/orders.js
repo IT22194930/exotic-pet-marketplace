@@ -84,6 +84,81 @@ async function checkCompliance(authHeader, payload) {
   return r.data;
 }
 
+function httpError(statusCode, payload) {
+  const err = new Error(payload?.error || "Request failed");
+  err.statusCode = statusCode;
+  err.payload = payload;
+  return err;
+}
+
+async function fetchOrderOrThrow(supabase, orderId) {
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (error || !order) throw httpError(404, { error: "Order not found" });
+  return order;
+}
+
+function assertBuyerOwnsOrderOrThrow(order, buyerId) {
+  if (order.buyer_id !== buyerId) {
+    throw httpError(403, { error: "You can only complete your own orders" });
+  }
+}
+
+function assertOrderStatusOrThrow(order, expectedStatus, actionVerb) {
+  if (order.status !== expectedStatus) {
+    throw httpError(409, {
+      error: `Cannot ${actionVerb} an order with status "${order.status}"`,
+    });
+  }
+}
+
+async function updateOrderStatusWithCandidatesOrThrow(
+  supabase,
+  orderId,
+  candidates,
+) {
+  let lastErr;
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const nextStatus of candidates) {
+    // eslint-disable-next-line no-await-in-loop
+    const { data: updated, error: updateErr } = await supabase
+      .from("orders")
+      .update({ status: nextStatus })
+      .eq("id", orderId)
+      .select("*")
+      .single();
+
+    if (!updateErr) return updated;
+
+    lastErr = updateErr;
+    const msg = String(updateErr.message || "");
+    // If the failure is due to the status CHECK constraint, try the next candidate.
+    if (/orders_status_check/i.test(msg)) continue;
+    // Otherwise, fail fast.
+    throw httpError(500, { error: "DB error", details: msg });
+  }
+
+  throw httpError(500, {
+    error: "DB error",
+    details: String(
+      lastErr?.message || lastErr || "Failed to update order status",
+    ),
+    attemptedStatuses: candidates,
+  });
+}
+
+function sendHttpError(res, err, fallbackStatusCode, fallbackPayload) {
+  if (err?.payload && err?.statusCode) {
+    return res.status(err.statusCode).json(err.payload);
+  }
+  return res.status(fallbackStatusCode).json(fallbackPayload);
+}
+
 // ── Route handlers ────────────────────────────────────────────────────────────
 
 // POST /orders — create a new order
@@ -323,60 +398,23 @@ router.patch("/:id/complete", async (req, res) => {
   try {
     const user = await getMe(authHeader);
 
-    const { data: order, error: findErr } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("id", req.params.id)
-      .single();
-
-    if (findErr || !order) {
-      return res.status(404).json({ error: "Order not found" });
-    }
-
-    if (order.buyer_id !== user.id) {
-      return res.status(403).json({ error: "You can only complete your own orders" });
-    }
-
-    if (order.status !== "created") {
-      return res.status(409).json({
-        error: `Cannot complete an order with status "${order.status}"`,
-      });
-    }
+    const order = await fetchOrderOrThrow(supabase, req.params.id);
+    assertBuyerOwnsOrderOrThrow(order, user.id);
+    assertOrderStatusOrThrow(order, "created", "complete");
 
     // Different environments may use different allowed values in the DB CHECK constraint.
     // Try the most likely candidates in order.
     const candidates = ["completed", "complete", "paid", "delivered"];
-    let lastErr;
 
-    // eslint-disable-next-line no-restricted-syntax
-    for (const nextStatus of candidates) {
-      // eslint-disable-next-line no-await-in-loop
-      const { data: updated, error: updateErr } = await supabase
-        .from("orders")
-        .update({ status: nextStatus })
-        .eq("id", req.params.id)
-        .select("*")
-        .single();
+    const updated = await updateOrderStatusWithCandidatesOrThrow(
+      supabase,
+      req.params.id,
+      candidates,
+    );
 
-      if (!updateErr) {
-        return res.json({ message: "Order marked complete", order: updated });
-      }
-
-      lastErr = updateErr;
-      const msg = String(updateErr.message || "");
-      // If the failure is due to the status CHECK constraint, try the next candidate.
-      if (/orders_status_check/i.test(msg)) continue;
-      // Otherwise, fail fast.
-      return res.status(500).json({ error: "DB error", details: msg });
-    }
-
-    return res.status(500).json({
-      error: "DB error",
-      details: String(lastErr?.message || lastErr || "Failed to update order status"),
-      attemptedStatuses: candidates,
-    });
+    return res.json({ message: "Order marked complete", order: updated });
   } catch (err) {
-    return res.status(401).json({
+    return sendHttpError(res, err, 401, {
       error: "Unauthorized",
       details: err.response?.data || err.message,
     });
