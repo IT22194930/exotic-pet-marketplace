@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { isAuthenticated } from "../utils/auth";
 
 const features = [
   {
@@ -90,18 +91,29 @@ export default function HomePage() {
 
           {/* CTAs */}
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-bold text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.35)] hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(16,185,129,0.5)] transition-all duration-200 no-underline"
-            >
-              Start Exploring →
-            </Link>
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-slate-100 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-1 transition-all duration-200 no-underline"
-            >
-              Sign In
-            </Link>
+            {isAuthenticated() ? (
+              <Link
+                to="/shop"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-bold text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.35)] hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(16,185,129,0.5)] transition-all duration-200 no-underline"
+              >
+                Shop →
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-bold text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.35)] hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(16,185,129,0.5)] transition-all duration-200 no-underline"
+                >
+                  Start Exploring →
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-slate-100 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-1 transition-all duration-200 no-underline"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>

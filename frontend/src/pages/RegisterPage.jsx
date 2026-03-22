@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import logo from "../assets/logo2.png";
 
 const ROLES = [
   { value: "buyer",  label: "🛒 Buyer — I want to buy exotic pets" },
@@ -51,7 +52,7 @@ export default function RegisterPage() {
     "block text-[0.75rem] font-semibold text-slate-400 uppercase tracking-widest mb-2";
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 pt-24 pb-16 overflow-hidden bg-[#0a0f1a]">
+    <div className="relative min-h-screen flex items-center justify-center px-4 pt-20 pb-8 overflow-hidden bg-[#0a0f1a]">
 
       {/* bg blobs */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_30%_20%,rgba(16,185,129,0.12),transparent_60%),radial-gradient(ellipse_50%_40%_at_70%_80%,rgba(245,158,11,0.08),transparent_60%)] pointer-events-none" />
@@ -65,21 +66,21 @@ export default function RegisterPage() {
 
       {/* Card */}
       <div
-        className="relative z-10 w-full max-w-[440px] bg-[#0f1a2e]/85 backdrop-blur-2xl border border-white/[0.07] rounded-3xl px-10 py-12 shadow-[0_24px_64px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.05)]"
+        className="relative z-10 w-full max-w-[440px] bg-[#0f1a2e]/85 backdrop-blur-2xl border border-white/[0.07] rounded-3xl px-8 py-8 shadow-[0_24px_64px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.05)]"
         style={{ animation: "cardIn 0.4s cubic-bezier(0.22,1,0.36,1)" }}
       >
         {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 text-2xl rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-500 shadow-[0_8px_24px_rgba(16,185,129,0.35)] mb-5">
-            🦎
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-3">
+            <img src={logo} alt="ExoticPets Logo" className="w-16 h-16" />
           </div>
-          <h1 className="text-[2rem] font-extrabold tracking-tight text-slate-100 font-serif mb-2">
+          <h1 className="text-[1.75rem] font-extrabold tracking-tight text-slate-100 font-serif mb-1">
             Create account
           </h1>
           <p className="text-sm text-slate-400">Join thousands of exotic pet enthusiasts</p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-5">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label htmlFor="reg-email" className={labelClass}>Email Address</label>
             <input id="reg-email" name="email" type="email" value={form.email}
@@ -119,7 +120,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2.5 py-4 mt-2 rounded-xl text-base font-bold text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(16,185,129,0.5)] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2.5 py-3.5 mt-1 rounded-xl text-base font-bold text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(16,185,129,0.5)] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-200"
           >
             {loading ? (
               <>
@@ -133,19 +134,19 @@ export default function RegisterPage() {
         </form>
 
         {error && (
-          <div className="mt-5 flex items-start gap-2.5 px-4 py-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-sm leading-relaxed" role="alert">
+          <div className="mt-4 flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-sm leading-relaxed" role="alert">
             <span className="flex-shrink-0">⚠️</span>
             {error}
           </div>
         )}
         {success && (
-          <div className="mt-5 flex items-start gap-2.5 px-4 py-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm leading-relaxed" role="alert">
+          <div className="mt-4 flex items-start gap-2.5 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm leading-relaxed" role="alert">
             <span className="flex-shrink-0">✅</span>
             {success}
           </div>
         )}
 
-        <p className="mt-7 text-center text-sm text-slate-400">
+        <p className="mt-5 text-center text-sm text-slate-400">
           Already have an account?{" "}
           <Link to="/login" className="text-emerald-400 font-semibold hover:text-amber-300 transition-colors no-underline">
             Sign in instead
