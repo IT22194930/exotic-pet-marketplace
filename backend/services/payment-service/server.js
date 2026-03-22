@@ -24,7 +24,7 @@ app.locals.supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get("/health", (req, res) => {
-  res.json({ service: "payment-service", status: "ok" });
+  res.json({ service: "payment-service", status: "ok now" });
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────
