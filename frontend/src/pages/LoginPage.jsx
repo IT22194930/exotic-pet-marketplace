@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import logo from "../assets/logo2.png";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -58,8 +59,8 @@ export default function LoginPage() {
       >
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 text-2xl rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-500 shadow-[0_8px_24px_rgba(16,185,129,0.35)] mb-5">
-            🦎
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5">
+            <img src={logo} alt="ExoticPets Logo" className="w-16 h-16" />
           </div>
           <h1 className="text-[2rem] font-extrabold tracking-tight text-slate-100 font-serif mb-2">
             Welcome back

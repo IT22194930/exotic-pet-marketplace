@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { isAuthenticated, getRole } from "../utils/auth";
 import logo from "../assets/logo2.png";
+import LogoutConfirmationModal from "./LogoutConfirmationModal";
 
 export default function Navbar() {
   const [loggedIn, setLoggedIn] = useState(isAuthenticated());
   const [role, setRole] = useState(getRole());
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
   const syncAuth = useCallback(() => {
@@ -24,12 +26,21 @@ export default function Navbar() {
     };
   }, [syncAuth]);
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = useCallback(() => {
     localStorage.removeItem("jwt");
     setLoggedIn(false);
     setRole(null);
+    setShowLogoutModal(false);
     navigate("/");
   }, [navigate]);
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
+  };
 
   const dashboardPath =
     role === "buyer"
@@ -66,9 +77,9 @@ export default function Navbar() {
       <div className="hidden md:flex items-center gap-1">
         <Link
           to="/shop"
-          className="px-4 py-2 text-sm font-medium text-slate-300 rounded-lg hover:text-white hover:bg-white/[0.06] transition-all duration-200 no-underline"
+          className="px-8 py-3 text-base font-extrabold text-white rounded-xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 border-2 border-emerald-400/60 shadow-[0_0_30px_rgba(16,185,129,0.6),0_0_60px_rgba(16,185,129,0.3)] hover:scale-105 hover:shadow-[0_0_40px_rgba(16,185,129,0.8),0_0_80px_rgba(16,185,129,0.4)] hover:border-emerald-300 transition-all duration-300 no-underline flex items-center gap-2"
         >
-          🛒 Shop
+          <span className="text-xl">🛒</span> Shop
         </Link>
       </div>
 
@@ -111,6 +122,12 @@ export default function Navbar() {
           </>
         )}
       </div>
+
+      <LogoutConfirmationModal
+        show={showLogoutModal}
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
     </nav>
   );
 }
