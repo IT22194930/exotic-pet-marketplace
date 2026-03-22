@@ -24,7 +24,6 @@ router.post("/order-confirmed", async (req, res) => {
     // AuthZ/authN check (throws on invalid token)
     await getUserFromToken(req.headers.authorization);
 
-
     const { data, error } = await supabase
       .from("notifications")
       .insert([{ order_id: orderId, channel, recipient, message }])
@@ -32,7 +31,6 @@ router.post("/order-confirmed", async (req, res) => {
       .single();
 
     if (error) {
-
       return res
         .status(500)
         .json({ error: "DB error", details: error.message });
@@ -57,15 +55,11 @@ router.post("/order-confirmed", async (req, res) => {
             </div>
           `,
         });
-
       } catch (mailErr) {
-
         // Non-fatal: notification already saved to DB
         console.error("SMTP error:", mailErr.message);
       }
     }
-
-
 
     res.json({
       message: "Notification sent",
@@ -90,7 +84,9 @@ router.post("/payment-success", async (req, res) => {
   const { orderId, recipient, amount, method, message } = req.body || {};
 
   if (!orderId || !recipient) {
-    return res.status(400).json({ error: "orderId and recipient are required" });
+    return res
+      .status(400)
+      .json({ error: "orderId and recipient are required" });
   }
 
   const msg =
@@ -117,7 +113,9 @@ router.post("/payment-success", async (req, res) => {
       .single();
 
     if (error) {
-      return res.status(500).json({ error: "DB error", details: error.message });
+      return res
+        .status(500)
+        .json({ error: "DB error", details: error.message });
     }
 
     let emailMessageId = null;
@@ -151,6 +149,78 @@ router.post("/payment-success", async (req, res) => {
     });
   } catch (err) {
     return res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
+  }
+});
+
+/**
+ * GET /notify/all
+ * Fetches all notifications from the database with pagination
+ */
+router.get("/all", async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(50, parseInt(req.query.limit) || 20);
+  const offset = (page - 1) * limit;
+
+  try {
+    // AuthN check
+    await getUserFromToken(req.headers.authorization);
+
+    const { data, error, count } = await supabase
+      .from("notifications")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      return res
+        .status(500)
+        .json({ error: "DB error", details: error.message });
+    }
+
+    res.json({
+      notifications: data,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        pages: Math.ceil(count / limit),
+      },
+    });
+  } catch (err) {
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message,
+    });
+  }
+});
+
+/**
+ * DELETE /notify/:id
+ * Deletes a notification by ID
+ */
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: "Notification ID is required" });
+  }
+
+  try {
+    // AuthN check
+    await getUserFromToken(req.headers.authorization);
+
+    const { error } = await supabase.from("notifications").delete().eq("id", id);
+
+    if (error) {
+      return res.status(500).json({ error: "DB error", details: error.message });
+    }
+
+    res.json({ message: "Notification deleted successfully", id });
+  } catch (err) {
+    res.status(401).json({
       error: "Unauthorized",
       details: err.response?.data || err.message,
     });

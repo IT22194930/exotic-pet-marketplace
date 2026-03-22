@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const COMPLIANCE_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
@@ -61,6 +61,13 @@ export default function AdminNotifySection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [history, setHistory] = useState([]);
+  const [allNotifications, setAllNotifications] = useState([]);
+  const [loadingAll, setLoadingAll] = useState(false);
+  const [errorAll, setErrorAll] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ pages: 1, total: 0 });
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -116,6 +123,60 @@ export default function AdminNotifySection() {
   const handleReset = () => {
     setResult(null);
     setError("");
+  };
+
+  const fetchAllNotifications = async (page = 1) => {
+    setLoadingAll(true);
+    setErrorAll("");
+    try {
+      const res = await fetch(
+        `${COMPLIANCE_URL}/notify/all?page=${page}&limit=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.details || data.error || "Failed to fetch");
+      setAllNotifications(data.notifications);
+      setPagination(data.pagination);
+      setCurrentPage(page);
+    } catch (err) {
+      setErrorAll(err.message);
+    } finally {
+      setLoadingAll(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllNotifications(1);
+  }, []);
+
+  const handleDeleteNotification = async (id) => {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`${COMPLIANCE_URL}/notify/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.details || data.error || "Failed to delete");
+      setAllNotifications((prev) => prev.filter((n) => n.id !== id));
+      setPagination((prev) => ({
+        ...prev,
+        total: prev.total - 1,
+        pages: Math.ceil((prev.total - 1) / prev.limit),
+      }));
+      setConfirmDelete(null);
+    } catch (err) {
+      setErrorAll(err.message);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const activeChannel = CHANNEL_OPTIONS.find((c) => c.value === form.channel);
@@ -432,6 +493,176 @@ export default function AdminNotifySection() {
           )}
         </div>
       </div>
+
+      {/*  All Notifications Section  */}
+      <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628] p-6 mb-6">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-100 font-serif">
+              📋 All Notifications
+            </h2>
+            <p className="text-slate-600 text-xs mt-1">
+              Browse all notifications sent via the system
+            </p>
+          </div>
+          <button
+            onClick={() => fetchAllNotifications(1)}
+            disabled={loadingAll}
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-violet-700/20 border border-violet-500/30 text-violet-300 hover:bg-violet-700/30 disabled:opacity-50 transition-all"
+          >
+            {loadingAll ? "Loading…" : "Refresh"}
+          </button>
+        </div>
+
+        {errorAll && (
+          <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-red-500/8 border border-red-500/20 text-red-300 text-sm mb-4">
+            <span className="text-base mt-0.5">⚠</span>
+            <span>{errorAll}</span>
+          </div>
+        )}
+
+        {!loadingAll && allNotifications.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-slate-600 text-sm">
+              No notifications yet. Click "Refresh" to load notifications.
+            </p>
+          </div>
+        )}
+
+        {loadingAll && (
+          <div className="text-center py-8">
+            <span className="inline-block w-4 h-4 rounded-full border-2 border-violet-500/30 border-t-violet-500 animate-spin" />
+          </div>
+        )}
+
+        {allNotifications.length > 0 && (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.06]">
+                    <th className="text-left py-3 px-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
+                      ID
+                    </th>
+                    <th className="text-left py-3 px-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
+                      Order ID
+                    </th>
+                    <th className="text-left py-3 px-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
+                      Channel
+                    </th>
+                    <th className="text-left py-3 px-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
+                      Recipient
+                    </th>
+                    <th className="text-left py-3 px-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
+                      Created
+                    </th>
+                    <th className="text-left py-3 px-3 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-600">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allNotifications.map((notif) => (
+                    <tr
+                      key={notif.id}
+                      className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
+                    >
+                      <td className="py-3 px-3 text-slate-400 font-mono text-xs">
+                        {notif.id.substring(0, 8)}…
+                      </td>
+                      <td className="py-3 px-3 text-slate-300">
+                        {notif.order_id || "—"}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span
+                          className={`inline-block px-2 py-1 rounded-lg text-xs font-semibold ${
+                            notif.channel === "email"
+                              ? "bg-sky-500/20 text-sky-300"
+                              : notif.channel === "sms"
+                                ? "bg-amber-500/20 text-amber-300"
+                                : "bg-violet-500/20 text-violet-300"
+                          }`}
+                        >
+                          {notif.channel}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-slate-400 text-xs truncate max-w-[200px]">
+                        {notif.recipient}
+                      </td>
+                      <td className="py-3 px-3 text-slate-500 text-xs whitespace-nowrap">
+                        {notif.created_at
+                          ? new Date(notif.created_at).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <button
+                          onClick={() => setConfirmDelete(notif.id)}
+                          disabled={deletingId === notif.id}
+                          className="px-2.5 py-1.5 text-xs rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-all"
+                        >
+                          {deletingId === notif.id ? "Deleting…" : "Delete"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between gap-4 mt-4 pt-4 border-t border-white/[0.06]">
+              <p className="text-xs text-slate-600">
+                Page {currentPage} of {pagination.pages} ({pagination.total}{" "}
+                total)
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => fetchAllNotifications(currentPage - 1)}
+                  disabled={currentPage === 1 || loadingAll}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-white/[0.08] text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-all"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => fetchAllNotifications(currentPage + 1)}
+                  disabled={currentPage === pagination.pages || loadingAll}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-white/[0.08] text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-all"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="rounded-2xl border border-red-500/30 bg-[#0a1628] p-6 max-w-sm">
+            <h3 className="text-lg font-bold text-red-300 mb-2">Delete Notification?</h3>
+            <p className="text-slate-400 text-sm mb-6">
+              Are you sure you want to permanently delete this notification? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                disabled={deletingId === confirmDelete}
+                className="px-4 py-2 text-sm rounded-lg border border-white/[0.08] text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteNotification(confirmDelete)}
+                disabled={deletingId === confirmDelete}
+                className="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold transition-all"
+              >
+                {deletingId === confirmDelete ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/*  Channel info cards  */}
       <div className="grid sm:grid-cols-3 gap-4">
