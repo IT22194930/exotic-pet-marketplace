@@ -27,7 +27,6 @@ router.post("/check", async (req, res) => {
   try {
     const requester = await getUserFromToken(req.headers.authorization);
 
-
     // Is species restricted?
     const { data: restrictedRow, error: rErr } = await supabase
       .from("restricted_species")
@@ -44,8 +43,6 @@ router.post("/check", async (req, res) => {
 
     // If restricted => block unless requester is admin
     if (restricted && requester.role !== "admin") {
-
-
       // Send rejection email
       if (emailTo) {
         sendMail({
@@ -74,8 +71,6 @@ router.post("/check", async (req, res) => {
         reason: "Restricted species: requires admin review / verified seller",
       });
     }
-
-
 
     // Send approval email
     if (emailTo) {
@@ -112,7 +107,7 @@ router.post("/check", async (req, res) => {
   }
 });
 
-// ── Restricted Species CRUD (admin only) ──────────────────────────────────────
+//  Restricted Species CRUD (admin only)
 
 /**
  * GET /compliance/restricted-species
@@ -163,8 +158,6 @@ router.post("/restricted-species", async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
 
-
-
     return res.status(201).json(data);
   } catch (err) {
     return res.status(401).json({
@@ -201,8 +194,6 @@ router.put("/restricted-species/:id", async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "Not found" });
-
-
 
     return res.json(data);
   } catch (err) {
@@ -241,8 +232,6 @@ router.delete("/restricted-species/:id", async (req, res) => {
       .eq("id", id);
 
     if (error) return res.status(500).json({ error: error.message });
-
-
 
     return res.json({ success: true });
   } catch (err) {

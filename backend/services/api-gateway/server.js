@@ -12,10 +12,11 @@ const PORT = process.env.PORT || 8000;
 const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 const LISTING_URL = process.env.LISTING_URL || "http://listing-service:8002";
 const ORDER_URL = process.env.ORDER_URL || "http://order-service:8003";
-const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
+const COMPLIANCE_URL =
+  process.env.COMPLIANCE_URL || "http://compliance-service:8004";
 const PAYMENT_URL = process.env.PAYMENT_URL || "http://payment-service:8005";
 
-// ── Global middleware ─────────────────────────────────────────────────────────
+//  Global middleware
 app.use(cors());
 app.use(morgan("dev"));
 
@@ -38,7 +39,7 @@ app.use("/notify", limiter);
 app.use("/audit", limiter);
 app.use("/payments", limiter);
 
-// ── Aggregated health check ───────────────────────────────────────────────────
+//  Aggregated health check
 app.get("/health", async (req, res) => {
   const services = [
     { name: "identity-service", url: IDENTITY_URL },
@@ -73,7 +74,7 @@ app.get("/health", async (req, res) => {
   });
 });
 
-// ── Route table ───────────────────────────────────────────────────────────────
+//  Route table
 app.get("/", (req, res) => {
   res.json({
     name: "Exotic Pet Marketplace — API Gateway",
@@ -93,7 +94,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// ── Proxy factory ─────────────────────────────────────────────────────────────
+//  Proxy factory
 // http-proxy-middleware receives req.url before Express strips the mount prefix,
 // so we must rewrite the FULL mount path to the upstream prefix.
 function makeProxy(target, mountPath, upstreamPrefix) {
@@ -116,7 +117,7 @@ function makeProxy(target, mountPath, upstreamPrefix) {
   });
 }
 
-// ── Route → service mapping ──────────────────────────────────────────────────
+//  Route → service mapping
 // Both /api/<path> and /<path> are accepted so clients can use either form.
 
 // Identity Service
@@ -147,13 +148,10 @@ app.use("/notify", makeProxy(COMPLIANCE_URL, "/notify", "/notify"));
 app.use("/audit", makeProxy(COMPLIANCE_URL, "/audit", "/audit"));
 
 // Payment Service
-app.use(
-  "/api/payments",
-  makeProxy(PAYMENT_URL, "/api/payments", "/payments"),
-);
+app.use("/api/payments", makeProxy(PAYMENT_URL, "/api/payments", "/payments"));
 app.use("/payments", makeProxy(PAYMENT_URL, "/payments", "/payments"));
 
-// ── 404 fallthrough ───────────────────────────────────────────────────────────
+//  404 fallthrough
 app.use((req, res) => {
   res.status(404).json({
     error: "Route not found",
@@ -163,7 +161,7 @@ app.use((req, res) => {
   });
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+//  Start
 app.listen(PORT, () => {
   console.log(`api-gateway running on port ${PORT}`);
   console.log(`  Identity   → ${IDENTITY_URL}`);

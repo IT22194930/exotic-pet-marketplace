@@ -22,12 +22,12 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 // Share the supabase client with all routes via app.locals
 app.locals.supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// ── Health ────────────────────────────────────────────────────────────────────
+//  Health
 app.get("/health", (req, res) => {
   res.json({ service: "payment-service", status: "ok" });
 });
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+//  Routes
 app.use("/payments", paymentRoutes);
 
 app.listen(PORT, () => console.log(`payment-service running on port ${PORT}`));

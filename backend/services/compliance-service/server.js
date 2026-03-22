@@ -32,7 +32,7 @@ app.listen(PORT, () =>
   console.log(`compliance-service running on port ${PORT}`),
 );
 
-// ── Kafka Consumer ────────────────────────────────────────────────────────────
+//  Kafka Consumer
 // Handles async audit logging and notifications for all domain events
 // Start asynchronously so HTTP server is accessible even if Kafka fails
 (async () => {
@@ -42,7 +42,7 @@ app.listen(PORT, () =>
       ["order-events", "user-events", "listing-events"],
       async (topic, eventType, payload) => {
         switch (eventType) {
-          // ── Order events ──────────────────────────────────────────────────────
+          //  Order events
           case "order.placed":
             // Send order confirmation email only for approved orders
             // (rejection email is already sent by the sync compliance check)
@@ -73,14 +73,14 @@ app.listen(PORT, () =>
           case "order.cancelled":
             break;
 
-          // ── User events ───────────────────────────────────────────────────────
+          //  User events
           case "user.registered":
             break;
 
           case "seller.verified":
             break;
 
-          // ── Listing events ────────────────────────────────────────────────────
+          //  Listing events
           case "listing.created":
             break;
 
