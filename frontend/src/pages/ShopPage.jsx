@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PetCard from "../components/PetCard";
+import ListingDetailModal from "../components/ListingDetailModal";
 
 const LISTING_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
@@ -17,6 +18,9 @@ export default function ShopPage() {
 
   // Purchase state
   const [toast, setToast] = useState(null); // { type: 'success' | 'error', message: string }
+
+  // Detail modal state
+  const [selectedListing, setSelectedListing] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -163,9 +167,23 @@ export default function ShopPage() {
       ) : (
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filtered.map((l) => (
-            <PetCard key={l.id} listing={l} onPurchase={handlePurchase} />
+            <PetCard
+              key={l.id}
+              listing={l}
+              onPurchase={handlePurchase}
+              onClick={setSelectedListing}
+            />
           ))}
         </div>
+      )}
+
+      {/* ── Detail Modal ── */}
+      {selectedListing && (
+        <ListingDetailModal
+          listing={selectedListing}
+          onClose={() => setSelectedListing(null)}
+          onPurchase={handlePurchase}
+        />
       )}
 
       {/* ── Toast Notification ── */}
