@@ -38,27 +38,35 @@ app.use("/listings", listingRoutes);
 
 app.listen(PORT, () => console.log(`listing-service running on port ${PORT}`));
 
-// Kafka Consumer 
+// Kafka Consumer (optional - service continues without it)
 // Consume order-events to update listing status without a synchronous HTTP call
-startConsumer(
-  "listing-service-group",
-  ["order-events"],
-  async (topic, eventType, payload) => {
-    if (eventType === "order.cancelled" && payload.listingId) {
-      const supabase = app.locals.supabase;
-      const { error } = await supabase
-        .from("listings")
-        .update({ status: "available" })
-        .eq("id", payload.listingId);
+const KAFKA_ENABLED = process.env.KAFKA_BROKERS && process.env.KAFKA_BROKERS !== 'none';
 
-      if (error) {
-        console.error("[kafka] Failed to reset listing status:", error.message);
-      } else {
-        console.log(`[kafka] Listing ${payload.listingId} reset to available`);
+if (KAFKA_ENABLED) {
+  console.log('[kafka] Starting Kafka consumer...');
+  startConsumer(
+    "listing-service-group",
+    ["order-events"],
+    async (topic, eventType, payload) => {
+      if (eventType === "order.cancelled" && payload.listingId) {
+        const supabase = app.locals.supabase;
+        const { error } = await supabase
+          .from("listings")
+          .update({ status: "available" })
+          .eq("id", payload.listingId);
+
+        if (error) {
+          console.error("[kafka] Failed to reset listing status:", error.message);
+        } else {
+          console.log(`[kafka] Listing ${payload.listingId} reset to available`);
+        }
       }
-    }
-  },
-).catch((err) => {
-  console.error("[kafka] listing-service consumer error:", err.message);
-  process.exit(1);
-});
+    },
+  ).catch((err) => {
+    console.error("[kafka] Consumer failed to start (non-fatal):", err.message);
+    console.warn("[kafka] Service will continue without event-driven features");
+  });
+} else {
+  console.log('[kafka] Kafka disabled - service running without event-driven features');
+}
+
