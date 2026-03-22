@@ -33,7 +33,7 @@ export default function SellerDashboard() {
   const me = getAuthUser();
   const token = localStorage.getItem("jwt");
 
-  /* ── Load seller's own listings ── */
+  /*  Load seller's own listings  */
   const loadListings = useCallback(async () => {
     setLoading(true);
     setApiError("");
@@ -55,7 +55,7 @@ export default function SellerDashboard() {
     loadListings();
   }, [loadListings]);
 
-  /* ── Fetch restricted species for validation ── */
+  /*  Fetch restricted species for validation  */
   const loadRestrictedSpecies = useCallback(async () => {
     try {
       const res = await fetch(`${LISTING_URL}/compliance/restricted-species`, {
@@ -74,7 +74,7 @@ export default function SellerDashboard() {
     loadRestrictedSpecies();
   }, [loadRestrictedSpecies]);
 
-  /* ── Delete listing ── */
+  /*  Delete listing  */
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this listing? This cannot be undone.")) return;
     setDeleting(id);
@@ -133,7 +133,7 @@ export default function SellerDashboard() {
           Loading listings…
         </div>
       ) : view === "grid" ? (
-        /* ── Grid view ── */
+        /*  Grid view  */
         <div className="max-w-6xl mx-auto">
           {listings.length === 0 ? (
             <div className="py-20 text-center text-slate-500">
@@ -154,7 +154,7 @@ export default function SellerDashboard() {
           )}
         </div>
       ) : (
-        /* ── Table / Detail view ── */
+        /*  Table / Detail view  */
         <ListingsTable
           listings={listings}
           deleting={deleting}

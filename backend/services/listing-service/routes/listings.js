@@ -6,7 +6,8 @@ const { publish } = require("../kafka/producer");
 const router = express.Router();
 
 const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
-const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
+const COMPLIANCE_URL =
+  process.env.COMPLIANCE_URL || "http://compliance-service:8004";
 const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || "listing-images";
 
 // Multer in-memory upload
@@ -34,10 +35,13 @@ async function getUserFromToken(authHeader) {
  * Returns { restricted: boolean } or throws on network/validation error.
  */
 async function checkSpeciesCompliance(species, authHeader) {
-  const response = await axios.get(`${COMPLIANCE_URL}/compliance/restricted-species`, {
-    headers: { Authorization: authHeader }, // compliance-service requires a valid JWT
-    timeout: 10000,
-  });
+  const response = await axios.get(
+    `${COMPLIANCE_URL}/compliance/restricted-species`,
+    {
+      headers: { Authorization: authHeader }, // compliance-service requires a valid JWT
+      timeout: 10000,
+    },
+  );
 
   const restrictedList = response.data;
 
@@ -83,9 +87,12 @@ router.post("/", async (req, res) => {
         .json({ error: "title, species, type, price are required" });
     }
 
-    // ── Compliance check: block restricted species at listing creation ────────
+    //  Compliance check: block restricted species at listing creation
     try {
-      const compliance = await checkSpeciesCompliance(species, req.headers.authorization);
+      const compliance = await checkSpeciesCompliance(
+        species,
+        req.headers.authorization,
+      );
       if (compliance.restricted) {
         return res.status(403).json({
           error: "Restricted species",
@@ -94,13 +101,16 @@ router.post("/", async (req, res) => {
       }
     } catch (complianceErr) {
       // If compliance-service is unreachable, fail safe — block the listing
-      console.error("[compliance] species check failed:", complianceErr.message);
+      console.error(
+        "[compliance] species check failed:",
+        complianceErr.message,
+      );
       return res.status(503).json({
         error: "Compliance service unavailable",
         details: "Could not verify species compliance. Please try again later.",
       });
     }
-    // ─────────────────────────────────────────────────────────────────────────
+    //
 
     const { data, error } = await supabase
       .from("listings")
@@ -136,12 +146,10 @@ router.post("/", async (req, res) => {
 
     res.status(201).json({ message: "Listing created", listing: data });
   } catch (err) {
-    res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message || err.code || String(err),
-      });
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message || err.code || String(err),
+    });
   }
 });
 
@@ -211,12 +219,10 @@ router.post("/:id/image", upload.single("image"), async (req, res) => {
 
     res.json({ message: "Image uploaded", imageUrl, listing: updated });
   } catch (err) {
-    res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message || err.code || String(err),
-      });
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message || err.code || String(err),
+    });
   }
 });
 
@@ -244,12 +250,10 @@ router.get("/my", async (req, res) => {
 
     res.json({ count: data.length, listings: data });
   } catch (err) {
-    res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message || err.code || String(err),
-      });
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message || err.code || String(err),
+    });
   }
 });
 
@@ -279,7 +283,8 @@ router.put("/:id", async (req, res) => {
       return res.status(403).json({ error: "Not your listing" });
 
     // Extract only permitted fields
-    const { title, species, type, price, status, description, removeImage } = req.body;
+    const { title, species, type, price, status, description, removeImage } =
+      req.body;
     const updates = {};
     if (title !== undefined) updates.title = title;
     if (species !== undefined) updates.species = species;
@@ -301,9 +306,10 @@ router.put("/:id", async (req, res) => {
     }
     if (status !== undefined) {
       if (!["available", "unavailable", "sold", "pending"].includes(status)) {
-        return res
-          .status(400)
-          .json({ error: "status must be 'available', 'unavailable', 'sold', or 'pending'" });
+        return res.status(400).json({
+          error:
+            "status must be 'available', 'unavailable', 'sold', or 'pending'",
+        });
       }
       updates.status = status;
     }
@@ -341,12 +347,10 @@ router.put("/:id", async (req, res) => {
 
     res.json({ message: "Listing updated", listing: updated });
   } catch (err) {
-    res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message || err.code || String(err),
-      });
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message || err.code || String(err),
+    });
   }
 });
 
@@ -406,12 +410,10 @@ router.delete("/:id", async (req, res) => {
 
     res.json({ message: "Listing deleted" });
   } catch (err) {
-    res
-      .status(401)
-      .json({
-        error: "Unauthorized",
-        details: err.response?.data || err.message || err.code || String(err),
-      });
+    res.status(401).json({
+      error: "Unauthorized",
+      details: err.response?.data || err.message || err.code || String(err),
+    });
   }
 });
 

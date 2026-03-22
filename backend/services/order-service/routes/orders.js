@@ -7,7 +7,8 @@ const router = express.Router();
 
 const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 const LISTING_URL = process.env.LISTING_URL || "http://listing-service:8002";
-const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
+const COMPLIANCE_URL =
+  process.env.COMPLIANCE_URL || "http://compliance-service:8004";
 
 async function initPendingPayment({ supabase, orderId, buyerId, amount }) {
   // payments table schema (as provided by the user):
@@ -25,16 +26,14 @@ async function initPendingPayment({ supabase, orderId, buyerId, amount }) {
 
   if (!findErr && Array.isArray(existing) && existing.length > 0) return;
 
-  const { error: insErr } = await supabase
-    .from("payments")
-    .insert([
-      {
-        orderId,
-        buyerId,
-        amount,
-        status: "pending",
-      },
-    ]);
+  const { error: insErr } = await supabase.from("payments").insert([
+    {
+      orderId,
+      buyerId,
+      amount,
+      status: "pending",
+    },
+  ]);
 
   if (insErr) throw insErr;
 }
@@ -159,7 +158,7 @@ function sendHttpError(res, err, fallbackStatusCode, fallbackPayload) {
   return res.status(fallbackStatusCode).json(fallbackPayload);
 }
 
-// ── Route handlers ────────────────────────────────────────────────────────────
+//  Route handlers
 
 // POST /orders — create a new order
 router.post("/", async (req, res) => {
