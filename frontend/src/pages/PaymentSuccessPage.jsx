@@ -6,12 +6,12 @@ function useQuery() {
   return useMemo(() => new URLSearchParams(search), [search]);
 }
 
-function formatLkr(amount) {
+function formatUSD(amount) {
   const value = Number(amount || 0);
-  if (!Number.isFinite(value)) return "LKR 0.00";
-  return new Intl.NumberFormat("en-LK", {
+  if (!Number.isFinite(value)) return "USD 0.00";
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "LKR",
+    currency: "USD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
@@ -45,7 +45,7 @@ export default function PaymentSuccessPage() {
           {amount != null && (
             <>
               <p className="text-sm text-slate-300 mt-4">Amount</p>
-              <p className="text-lg font-extrabold text-emerald-200 font-serif mt-1">{formatLkr(amount)}</p>
+              <p className="text-lg font-extrabold text-emerald-200 font-serif mt-1">{formatUSD(amount)}</p>
             </>
           )}
         </div>
