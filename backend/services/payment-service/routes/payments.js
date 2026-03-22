@@ -1,11 +1,46 @@
 const express = require("express");
 const axios = require("axios");
-const { sendMail } = require("../helpers/mailer");
 
 const router = express.Router();
 
-const ORDER_URL = process.env.ORDER_URL || "http://order-service:8003";
-const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
+const ORDER_URL = process.env.ORDER_URL;
+const IDENTITY_URL = process.env.IDENTITY_URL;
+const COMPLIANCE_URL = process.env.COMPLIANCE_URL;
+
+async function notifyPaymentSuccess(authHeader, { orderId, recipient, amount, method }) {
+  if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing Bearer token");
+  if (!orderId) throw new Error("Missing orderId");
+  if (!recipient) throw new Error("Missing recipient");
+
+  await axios.post(
+    `${COMPLIANCE_URL}/notify/payment-success`,
+    {
+      orderId,
+      recipient,
+      amount,
+      method,
+    },
+    {
+      headers: { Authorization: authHeader },
+      timeout: 15000,
+    },
+  );
+}
+
+async function bestEffortPaymentSuccessNotify(authHeader, { orderId, amount, method }) {
+  try {
+    const me = await getMe(authHeader);
+    if (!me?.email) return;
+    await notifyPaymentSuccess(authHeader, {
+      orderId,
+      recipient: me.email,
+      amount,
+      method,
+    });
+  } catch (e) {
+    console.error("[notify] compliance payment-success failed:", e.message);
+  }
+}
 
 async function getMe(authHeader) {
   if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing Bearer token");
@@ -197,6 +232,13 @@ router.post("/process", async (req, res) => {
       const status = err.response?.status;
       const details = err.response?.data || err.message;
 
+      // Payment is completed; still notify user (best-effort)
+      bestEffortPaymentSuccessNotify(authHeader, {
+        orderId,
+        amount,
+        method: "cod",
+      });
+
       // Payment is already recorded as completed; don't roll it back.
       // Return success so the frontend can move on, but include the order-update error.
       return res.json({
@@ -214,6 +256,13 @@ router.post("/process", async (req, res) => {
         },
       });
     }
+
+    // Notify user on COD completion (best-effort)
+    bestEffortPaymentSuccessNotify(authHeader, {
+      orderId,
+      amount,
+      method: "cod",
+    });
 
     // return res.json({ success: true, method: "cod", amount, currency: "LKR", status: "completed" });
     return res.json({ success: true, method: "cod", amount, currency: "$", status: "completed" });
@@ -266,6 +315,13 @@ router.post("/process", async (req, res) => {
     const status = err.response?.status;
     const details = err.response?.data || err.message;
 
+    // Payment is completed; still notify user (best-effort)
+    bestEffortPaymentSuccessNotify(authHeader, {
+      orderId,
+      amount,
+      method: "online",
+    });
+
     return res.json({
       success: true,
       method: "online",
@@ -283,30 +339,12 @@ router.post("/process", async (req, res) => {
     });
   }
 
-  // Send payment success email (best-effort)
-  try {
-    const me = await getMe(authHeader);
-    if (me?.email) {
-      await sendMail({
-        to: me.email,
-        subject: `✅ Payment Successful — Order #${orderId}`,
-        // text: `Your payment for order #${orderId} was successful. Amount: LKR ${amount.toLocaleString()}. Payment Ref: ${paymentId}`,
-        text: `Your payment for order #${orderId} was successful. Amount: $ ${amount.toLocaleString()}. Payment Ref: ${paymentId}`,
-        html: `
-          <div style="font-family:sans-serif;max-width:600px;margin:auto">
-            <h2>🐾 Exotic Pet Marketplace</h2>
-            <h3 style="color:#27ae60">✅ Payment Successful</h3>
-            <p>Order ID: <strong>${orderId}</strong></p>
-            <p>Amount: <strong>$ ${amount.toLocaleString()}</strong></p>
-            <p>Payment Reference: <strong>${paymentId}</strong></p>
-            <p>Thank you for your purchase.</p>
-          </div>
-        `,
-      });
-    }
-  } catch (e) {
-    console.error("[email] payment success email failed:", e.message);
-  }
+  // Send payment success notification via compliance-service (best-effort)
+  bestEffortPaymentSuccessNotify(authHeader, {
+    orderId,
+    amount,
+    method: "online",
+  });
 
   return res.json({
     success: true,
