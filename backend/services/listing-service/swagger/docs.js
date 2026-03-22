@@ -22,6 +22,7 @@
  *     description: >
  *       Creates a new listing for verified sellers. The service validates the seller's
  *       JWT with the **Identity Service** and checks if the seller is verified.
+ *       The species is also checked against the **Compliance Service** restricted species list.
  *       Images are uploaded separately via the image upload endpoint.
  *       Publishes a Kafka event (listing.created) upon successful creation.
  *     tags: [Listings]
@@ -69,10 +70,28 @@
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
  *       403:
- *         description: Only verified sellers can create listings
+ *         description: Either seller is not verified, or species is on the restricted list
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
+ *             examples:
+ *               unverified-seller:
+ *                 summary: Seller not verified
+ *                 value:
+ *                   error: Your seller account must be verified by an admin before you can create listings
+ *               restricted-species:
+ *                 summary: Restricted species
+ *                 value:
+ *                   error: Restricted species
+ *                   details: '"Tiger" is on the restricted species list and cannot be listed. Contact an admin if you have the required permits.'
+ *       503:
+ *         description: Compliance service is unavailable (fail-safe - listing creation blocked)
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ *             example:
+ *               error: Compliance service unavailable
+ *               details: Could not verify species compliance. Please try again later.
  */
 
 /**
