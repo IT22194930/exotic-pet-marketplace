@@ -3,7 +3,7 @@ import StepIndicator from "./StepIndicator";
 import SpeciesAutocomplete from "./SpeciesAutocomplete";
 import UploadImage from "../UploadImage";
 
-const EMPTY_FORM = { title: "", species: "", type: "exotic", price: "" };
+const EMPTY_FORM = { title: "", species: "", type: "exotic", price: "", description: "" };
 const LISTING_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 export default function CreateListingModal({
@@ -54,6 +54,7 @@ export default function CreateListingModal({
           species: form.species,
           type: form.type,
           price: Number(form.price),
+          description: form.description,
         }),
       });
       const data = await res.json();
@@ -143,6 +144,17 @@ export default function CreateListingModal({
                 className={inputClass}
                 labelClassName={labelClass}
               />
+              <div>
+                <label className={labelClass}>Description (Optional)</label>
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder="Describe the pet: age, health, temperament, care requirements..."
+                  className={`${inputClass} min-h-25 resize-y`}
+                  rows={4}
+                />
+              </div>
               <div>
                 <label className={labelClass}>Type</label>
                 <select
