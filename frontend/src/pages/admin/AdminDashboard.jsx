@@ -5,7 +5,7 @@ import AdminComplianceSection from "./AdminComplianceSection";
 import AdminRestrictedSpeciesSection from "./AdminRestrictedSpeciesSection";
 import AdminNotifySection from "./AdminNotifySection";
 
-// ── Nav config ───────────────────────────────────────────────────────────────
+//  Nav config
 const NAV_ITEMS = [
   {
     id: "users",
@@ -70,7 +70,7 @@ const NAV_ITEMS = [
   },
 ];
 
-// ── Accent helpers ───────────────────────────────────────────────────────────
+//  Accent helpers
 const ACCENT_ACTIVE = {
   purple: "bg-purple-500/15 text-purple-300 border-purple-500/30",
   sky: "bg-sky-500/15 text-sky-300 border-sky-500/30",
@@ -84,7 +84,7 @@ const ACCENT_DOT = {
   amber: "bg-amber-400",
 };
 
-// ── Main component ───────────────────────────────────────────────────────────
+//  Main component
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("users");
   const [sidebarOpen, setSidebarOpen] = useState(true); // desktop collapse
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
     setMobileOpen(false);
   };
 
-  // ── Sidebar inner nav (desktop, respects collapsed state) ────────────────
+  //  Sidebar inner nav (desktop, respects collapsed state)
   const SidebarNav = () => (
     <nav className="flex-1 py-4 overflow-y-auto">
       <ul className="space-y-1 px-2">
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0a0f1a] flex">
-      {/* ── Mobile overlay ── */}
+      {/*  Mobile overlay  */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* ── Desktop sidebar ── */}
+      {/*  Desktop sidebar  */}
       <aside
         className={`hidden lg:flex flex-col sticky top-0 h-screen bg-[#070d1a] border-r border-white/[0.07] transition-all duration-300 shrink-0 ${
           sidebarOpen ? "w-60" : "w-16"
@@ -194,7 +194,7 @@ export default function AdminDashboard() {
         )}
       </aside>
 
-      {/* ── Mobile drawer ── */}
+      {/*  Mobile drawer  */}
       <aside
         className={`fixed top-0 left-0 z-40 h-full w-64 flex flex-col bg-[#070d1a] border-r border-white/[0.07] transition-transform duration-300 lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* ── Main content ── */}
+      {/*  Main content  */}
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Top bar */}
         <header className="sticky top-0 z-20 h-16 bg-[#070d1a]/90 backdrop-blur border-b border-white/[0.07] flex items-center px-4 md:px-6 gap-4">

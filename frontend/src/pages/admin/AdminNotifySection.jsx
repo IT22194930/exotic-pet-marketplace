@@ -123,7 +123,7 @@ export default function AdminNotifySection() {
 
   return (
     <>
-      {/* ── Header ── */}
+      {/*  Header  */}
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-violet-400 mb-1">
@@ -147,7 +147,7 @@ export default function AdminNotifySection() {
         )}
       </div>
 
-      {/* ── Main grid ── */}
+      {/*  Main grid  */}
       <div className="grid lg:grid-cols-[1fr_400px] gap-6 mb-6">
         {/* Form card */}
         <form
@@ -433,7 +433,7 @@ export default function AdminNotifySection() {
         </div>
       </div>
 
-      {/* ── Channel info cards ── */}
+      {/*  Channel info cards  */}
       <div className="grid sm:grid-cols-3 gap-4">
         {CHANNEL_OPTIONS.map(({ value, icon, label, hint, color }) => {
           const colors = CHANNEL_COLORS[color];
@@ -466,7 +466,7 @@ export default function AdminNotifySection() {
   );
 }
 
-// ── Result row helper ────────────────────────────────────────────────────────
+//  Result row helper
 function ResultRow({ label, value, mono = false }) {
   return (
     <div className="flex justify-between items-start gap-4 py-2 border-b border-white/[0.05]">

@@ -22,17 +22,21 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 // Share the supabase client with all routes via app.locals
 app.locals.supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// ── Swagger UI ────────────────────────────────────────────────────────────────
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: "Order Service API Docs",
-}));
+//  Swagger UI
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: "Order Service API Docs",
+  }),
+);
 
-// ── Health ────────────────────────────────────────────────────────────────────
+//  Health
 app.get("/health", (req, res) => {
   res.json({ service: "order-service", status: "ok" });
 });
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+//  Routes
 app.use("/orders", orderRoutes);
 
 app.listen(PORT, () => console.log(`order-service running on port ${PORT}`));

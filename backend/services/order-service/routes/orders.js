@@ -7,14 +7,10 @@ const router = express.Router();
 
 const IDENTITY_URL = process.env.IDENTITY_URL || "http://identity-service:8001";
 const LISTING_URL = process.env.LISTING_URL || "http://listing-service:8002";
-const COMPLIANCE_URL = process.env.COMPLIANCE_URL || "http://compliance-service:8004";
+const COMPLIANCE_URL =
+  process.env.COMPLIANCE_URL || "http://compliance-service:8004";
 
 async function initPendingPayment({ supabase, orderId, buyerId, amount }) {
-  // payments table schema (as provided by the user):
-  //   orderId (uuid), buyerId (uuid), amount (double), status (text)
-  // Primary key is (id, orderId), so orderId is not unique by itself.
-  // We therefore do a best-effort "select then insert" to avoid duplicates.
-
   const { data: existing, error: findErr } = await supabase
     .from("payments")
     .select("id,orderId,status")
@@ -25,16 +21,14 @@ async function initPendingPayment({ supabase, orderId, buyerId, amount }) {
 
   if (!findErr && Array.isArray(existing) && existing.length > 0) return;
 
-  const { error: insErr } = await supabase
-    .from("payments")
-    .insert([
-      {
-        orderId,
-        buyerId,
-        amount,
-        status: "pending",
-      },
-    ]);
+  const { error: insErr } = await supabase.from("payments").insert([
+    {
+      orderId,
+      buyerId,
+      amount,
+      status: "pending",
+    },
+  ]);
 
   if (insErr) throw insErr;
 }
@@ -123,9 +117,7 @@ async function updateOrderStatusWithCandidatesOrThrow(
 ) {
   let lastErr;
 
-  // eslint-disable-next-line no-restricted-syntax
   for (const nextStatus of candidates) {
-    // eslint-disable-next-line no-await-in-loop
     const { data: updated, error: updateErr } = await supabase
       .from("orders")
       .update({ status: nextStatus })
@@ -159,7 +151,7 @@ function sendHttpError(res, err, fallbackStatusCode, fallbackPayload) {
   return res.status(fallbackStatusCode).json(fallbackPayload);
 }
 
-// ── Route handlers ────────────────────────────────────────────────────────────
+//  Route handlers
 
 // POST /orders — create a new order
 router.post("/", async (req, res) => {
@@ -221,7 +213,6 @@ router.post("/", async (req, res) => {
         .json({ error: "DB error", details: error.message });
 
     // Create payment row automatically (pending) when order is created.
-    // Supports both snake_case and camelCase payments tables.
     if (status === "created") {
       try {
         await initPendingPayment({
@@ -240,8 +231,7 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // Publish order.placed event – compliance-service will handle notification
-    // email and audit logging asynchronously via Kafka
+    // Publish order.placed event – compliance-service will handle notification email and audit logging asynchronously via Kafka
     publish("order-events", "order.placed", {
       orderId: updatedOrder.id,
       buyerId: user.id,
@@ -299,7 +289,6 @@ router.post("/", async (req, res) => {
 });
 
 // GET /orders/my — buyer's own orders
-// NOTE: must be before /:id or Express matches "my" as the id param
 router.get("/my", async (req, res) => {
   const authHeader = req.headers.authorization;
   const supabase = req.app.locals.supabase;

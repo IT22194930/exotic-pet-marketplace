@@ -38,7 +38,7 @@ app.get("/health", (req, res) => {
   res.json({ service: "payment-service", status: "ok" });
 });
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+//  Routes
 app.use("/payments", paymentRoutes);
 
 app.listen(PORT, () => console.log(`payment-service running on port ${PORT}`));

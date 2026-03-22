@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { isAuthenticated } from "../utils/auth";
 
 const features = [
   {
@@ -43,7 +44,7 @@ const stats = [
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* ── HERO ── */}
+      {/*  HERO  */}
       <section className="relative flex flex-col items-center justify-center text-center px-6 pt-36 pb-20 overflow-hidden">
         {/* bg gradients */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(16,185,129,0.18),transparent_70%),radial-gradient(ellipse_60%_40%_at_80%_80%,rgba(245,158,11,0.10),transparent_60%),linear-gradient(180deg,#0a0f1a_0%,#0d1526_100%)] pointer-events-none" />
@@ -90,23 +91,34 @@ export default function HomePage() {
 
           {/* CTAs */}
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-bold text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.35)] hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(16,185,129,0.5)] transition-all duration-200 no-underline"
-            >
-              Start Exploring →
-            </Link>
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-slate-100 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-1 transition-all duration-200 no-underline"
-            >
-              Sign In
-            </Link>
+            {isAuthenticated() ? (
+              <Link
+                to="/shop"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-bold text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.35)] hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(16,185,129,0.5)] transition-all duration-200 no-underline"
+              >
+                Shop →
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-bold text-white bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_4px_24px_rgba(16,185,129,0.35)] hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(16,185,129,0.5)] transition-all duration-200 no-underline"
+                >
+                  Start Exploring →
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-slate-100 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-1 transition-all duration-200 no-underline"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
 
-      {/* ── STATS STRIP ── */}
+      {/*  STATS STRIP  */}
       <div className="flex flex-wrap justify-center border-t border-white/[0.07] bg-[#0a0f1a]/60 backdrop-blur-sm">
         {stats.map((s, i) => (
           <div
@@ -125,7 +137,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* ── FEATURES ── */}
+      {/*  FEATURES  */}
       <section className="border-t border-white/[0.07] bg-[#0f1726] py-20 px-6 md:px-10">
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f) => (

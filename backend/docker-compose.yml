@@ -1,5 +1,5 @@
 services:
-  # ── Kafka (KRaft mode – no Zookeeper) ─────────────────────────────────────
+  #  Kafka (KRaft mode – no Zookeeper)
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: kafka
@@ -35,7 +35,7 @@ services:
     networks:
       - marketplace-net
 
-  # ── Kafka UI (http://localhost:8088) ──────────────────────────────────────
+  #  Kafka UI (http://localhost:8088)
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -49,7 +49,7 @@ services:
         condition: service_healthy
     networks:
       - marketplace-net
-  # ── API Gateway (http://localhost:8000) ──────────────────────────────────────
+  #  API Gateway (http://localhost:8000)
   api-gateway:
     build: ./services/api-gateway
     container_name: api-gateway
@@ -100,7 +100,7 @@ services:
       - SMTP_FROM=${SMTP_FROM}
     networks:
       - marketplace-net
-  # ── Topic pre-creator (runs once, exits) ─────────────────────────────────
+  #  Topic pre-creator (runs once, exits)
   kafka-init:
     image: confluentinc/cp-kafka:7.6.0
     container_name: kafka-init

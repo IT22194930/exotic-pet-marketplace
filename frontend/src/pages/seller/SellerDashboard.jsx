@@ -8,6 +8,7 @@ import ErrorBanner from "../../components/seller/ErrorBanner";
 import ListingsTable from "../../components/seller/ListingsTable";
 import CreateListingModal from "../../components/seller/CreateListingModal";
 import EditListingModal from "../../components/seller/EditListingModal";
+import DeleteConfirmationModal from "../../components/seller/DeleteConfirmationModal";
 
 const LISTING_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
@@ -26,6 +27,8 @@ export default function SellerDashboard() {
 
   // Delete
   const [deleting, setDeleting] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Restricted species
   const [restrictedSpecies, setRestrictedSpecies] = useState([]);
@@ -33,7 +36,7 @@ export default function SellerDashboard() {
   const me = getAuthUser();
   const token = localStorage.getItem("jwt");
 
-  /* ── Load seller's own listings ── */
+  /*  Load seller's own listings  */
   const loadListings = useCallback(async () => {
     setLoading(true);
     setApiError("");
@@ -55,7 +58,7 @@ export default function SellerDashboard() {
     loadListings();
   }, [loadListings]);
 
-  /* ── Fetch restricted species for validation ── */
+  /*  Fetch restricted species for validation  */
   const loadRestrictedSpecies = useCallback(async () => {
     try {
       const res = await fetch(`${LISTING_URL}/compliance/restricted-species`, {
@@ -74,9 +77,16 @@ export default function SellerDashboard() {
     loadRestrictedSpecies();
   }, [loadRestrictedSpecies]);
 
-  /* ── Delete listing ── */
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this listing? This cannot be undone.")) return;
+  /*  Delete listing  */
+  const handleDelete = (id) => {
+    const listing = listings.find((l) => l.id === id);
+    setDeleteTarget(listing);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
     setDeleting(id);
     setApiError("");
     try {
@@ -88,11 +98,18 @@ export default function SellerDashboard() {
       if (!res.ok)
         throw new Error(data.details || data.error || "Delete failed");
       setListings((prev) => prev.filter((l) => l.id !== id));
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
     } catch (err) {
       setApiError(err.message);
     } finally {
       setDeleting(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteTarget(null);
   };
 
   const openModal = () => setShowModal(true);
@@ -133,7 +150,7 @@ export default function SellerDashboard() {
           Loading listings…
         </div>
       ) : view === "grid" ? (
-        /* ── Grid view ── */
+        /*  Grid view  */
         <div className="max-w-6xl mx-auto">
           {listings.length === 0 ? (
             <div className="py-20 text-center text-slate-500">
@@ -154,7 +171,7 @@ export default function SellerDashboard() {
           )}
         </div>
       ) : (
-        /* ── Table / Detail view ── */
+        /*  Table / Detail view  */
         <ListingsTable
           listings={listings}
           deleting={deleting}
@@ -179,6 +196,14 @@ export default function SellerDashboard() {
         token={token}
         restrictedSpecies={restrictedSpecies}
         onSuccess={loadListings}
+      />
+
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        listingTitle={deleteTarget?.species}
+        isDeleting={deleting !== null}
       />
 
       <style>{`@keyframes cardIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }`}</style>
