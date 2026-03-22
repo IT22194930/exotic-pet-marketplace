@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useMemo, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 function useQuery() {
   const { search } = useLocation();
@@ -19,8 +19,18 @@ function formatLkr(amount) {
 
 export default function PaymentSuccessPage() {
   const q = useQuery();
+  const navigate = useNavigate();
   const orderId = q.get("orderId") || "—";
   const amount = q.get("amount");
+
+  // Auto-redirect to dashboard after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate("/buyer/dashboard");
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-[#0a0f1a] pt-24 pb-16 px-6 md:px-10">
@@ -40,12 +50,20 @@ export default function PaymentSuccessPage() {
           )}
         </div>
 
+        <div className="mt-5 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-emerald-200 text-sm">
+          ✅ Your payment has been processed successfully. Your order status will be updated shortly.
+        </div>
+
+        <div className="mt-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 text-blue-200 text-xs">
+          ⏱️ Redirecting to My Orders in 5 seconds...
+        </div>
+
         <div className="mt-7 flex items-center gap-3">
           <Link
             to="/buyer/dashboard"
             className="px-5 py-2.5 text-sm font-semibold text-white rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-500 border border-emerald-500/30 shadow-[0_6px_24px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 hover:shadow-[0_10px_34px_rgba(16,185,129,0.45)] transition-all duration-200 no-underline"
           >
-            Go to My Orders
+            Go to My Orders Now
           </Link>
           <Link
             to="/shop"
