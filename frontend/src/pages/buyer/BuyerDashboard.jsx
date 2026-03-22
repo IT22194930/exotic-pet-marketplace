@@ -6,6 +6,9 @@ const ORDER_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 const STATUS_STYLES = {
   created:   "bg-emerald-500/15 text-emerald-400  border-emerald-500/30",
+  complete:  "bg-emerald-500/15 text-emerald-300  border-emerald-500/30",
+  completed: "bg-emerald-500/15 text-emerald-300  border-emerald-500/30",
+  paid:      "bg-emerald-500/15 text-emerald-300  border-emerald-500/30",
   rejected:  "bg-red-500/15    text-red-400     border-red-500/30",
   cancelled: "bg-slate-500/15  text-slate-400   border-slate-500/30",
   pending:   "bg-amber-500/15  text-amber-400   border-amber-500/30",
@@ -13,9 +16,16 @@ const STATUS_STYLES = {
   delivered: "bg-teal-500/15   text-teal-400    border-teal-500/30",
 };
 
+const PAYMENT_STATUS_STYLES = {
+  pending:  "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  complete: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  completed: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+};
+
 export default function BuyerDashboard() {
   const navigate = useNavigate();
   const [orders, setOrders]     = useState([]);
+  const [paymentStatuses, setPaymentStatuses] = useState({}); // { [orderId]: 'pending'|'complete' }
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
   const [toast, setToast]       = useState(null);   // { type, message }
@@ -39,7 +49,28 @@ export default function BuyerDashboard() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.details || data.error || "Failed to load orders");
-        setOrders(data.orders || []);
+
+        const nextOrders = data.orders || [];
+        setOrders(nextOrders);
+
+        // Fetch payment statuses in bulk for this buyer (best-effort)
+        const orderIds = nextOrders.map((o) => o.id).filter(Boolean);
+        if (orderIds.length > 0) {
+          const sres = await fetch(`${ORDER_URL}/payments/status/bulk`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ orderIds }),
+          });
+
+          const sdata = await sres.json();
+          if (sres.ok) setPaymentStatuses(sdata.statuses || {});
+          else setPaymentStatuses({});
+        } else {
+          setPaymentStatuses({});
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -131,6 +162,7 @@ export default function BuyerDashboard() {
                   <th className="text-left px-6 py-4">Species</th>
                   <th className="text-left px-6 py-4">Price</th>
                   <th className="text-left px-6 py-4">Status</th>
+                  <th className="text-left px-6 py-4">Payment Status</th>
                   <th className="text-left px-6 py-4">Reason</th>
                   <th className="text-left px-6 py-4">Placed</th>
                   <th className="text-left px-6 py-4">Action</th>
@@ -139,7 +171,7 @@ export default function BuyerDashboard() {
               <tbody>
                 {orders.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-16 text-center text-slate-500">
+                    <td colSpan={8} className="px-6 py-16 text-center text-slate-500">
                       No orders yet.{" "}
                       <Link to="/shop" className="text-emerald-400 hover:text-emerald-300 underline">
                         Browse the Shop →
@@ -159,6 +191,25 @@ export default function BuyerDashboard() {
                           {o.status}
                         </span>
                       </td>
+                      <td className="px-6 py-4">
+                        {paymentStatuses[o.id] ? (
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize ${PAYMENT_STATUS_STYLES[paymentStatuses[o.id]] ?? PAYMENT_STATUS_STYLES.pending}`}
+                            title={paymentStatuses[o.id] === "complete" || paymentStatuses[o.id] === "completed" ? "Completed" : "Pending"}
+                          >
+                            {paymentStatuses[o.id] === "complete" || paymentStatuses[o.id] === "completed" ? "completed" : paymentStatuses[o.id]}
+                          </span>
+                        ) : o.status === "created" ? (
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize ${PAYMENT_STATUS_STYLES.pending}`}
+                            title="Pending"
+                          >
+                            pending
+                          </span>
+                        ) : (
+                          <span className="text-slate-700 text-xs">—</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-slate-400 text-xs max-w-xs truncate">
                         {o.reason || <span className="text-slate-600">—</span>}
                       </td>
@@ -166,7 +217,7 @@ export default function BuyerDashboard() {
                         {o.created_at ? new Date(o.created_at).toLocaleString() : "—"}
                       </td>
                       <td className="px-6 py-4">
-                        {o.status === "created" ? (
+                        {o.status === "created" && paymentStatuses[o.id] !== "complete" && paymentStatuses[o.id] !== "completed" ? (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handlePay(o.id)}

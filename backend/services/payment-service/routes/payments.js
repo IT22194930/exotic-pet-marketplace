@@ -16,163 +16,52 @@ async function getMe(authHeader) {
   return r.data;
 }
 
-async function upsertPayment(supabase, row) {
+async function writePaymentStatus(supabase, { orderId, buyerId, amount, status }) {
   if (!supabase) throw new Error("Supabase client not initialized");
+  if (!orderId) throw new Error("Missing orderId");
+  if (!buyerId) throw new Error("Missing buyerId");
 
-  const nowIso = new Date().toISOString();
+  const payload = {
+    orderId,
+    buyerId,
+    amount: Number(amount || 0),
+    status,
+  };
 
-  const missingColRe = /Could not find the '([^']+)' column of 'payments'/i;
-  const noConstraintRe = /no unique or exclusion constraint matching the on conflict specification/i;
+  // We can have multiple rows per orderId because the PK is (id, orderId).
+  // Always update the latest row (highest id) to keep status deterministic.
+  const latest = await supabase
+    .from("payments")
+    .select("id")
+    .eq("orderId", orderId)
+    .eq("buyerId", buyerId)
+    .order("id", { ascending: false })
+    .limit(1);
 
-  async function runWithAutoTrim({ label, opName, payload, run }) {
-    for (let i = 0; i < 10; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
-      const { data, error } = await run(payload);
-      if (!error) return { data, error: null };
+  if (latest.error) throw latest.error;
 
-      const msg = String(error.message || "");
-      const m = msg.match(missingColRe);
-      const missingCol = m?.[1];
-      const isSchemaMismatch = Boolean(missingCol) || /schema cache/i.test(msg);
+  const latestRow = Array.isArray(latest.data) ? latest.data[0] : null;
+  if (latestRow?.id != null) {
+    const upd = await supabase
+      .from("payments")
+      .update({ amount: payload.amount, status: payload.status })
+      .eq("id", latestRow.id)
+      .eq("orderId", orderId)
+      .select("id,orderId,buyerId,amount,status");
 
-      if (!isSchemaMismatch) return { data: null, error };
-      if (!missingCol) return { data: null, error };
-
-      if (Object.prototype.hasOwnProperty.call(payload, missingCol)) {
-        delete payload[missingCol];
-        console.warn(
-          `[payments] schema mismatch (${label}/${opName}): dropped '${missingCol}' and retrying`,
-        );
-        continue;
-      }
-
-      return { data: null, error };
-    }
-
-    return { data: null, error: new Error("Supabase operation failed after retries") };
+    if (upd.error) throw upd.error;
+    if (Array.isArray(upd.data) && upd.data.length > 0) return upd.data[0];
   }
 
-  async function manualUpsert({ label, key, payload }) {
-    const orderValue = payload[key];
-    if (!orderValue) {
-      return {
-        data: null,
-        error: new Error(`Cannot write payment: missing '${key}'`),
-      };
-    }
+  // If there wasn't an existing row, insert a new one.
+  const ins = await supabase
+    .from("payments")
+    .insert([payload])
+    .select("id,orderId,buyerId,amount,status")
+    .single();
 
-    // Try UPDATE first.
-    const updatePayload = { ...payload };
-    delete updatePayload[key];
-
-    const upd = await runWithAutoTrim({
-      label,
-      opName: "update",
-      payload: updatePayload,
-      run: async (p) =>
-        supabase
-          .from("payments")
-          .update(p)
-          .eq(key, orderValue)
-          .select("*"),
-    });
-
-    if (!upd.error && Array.isArray(upd.data) && upd.data.length > 0) {
-      return { data: upd.data[0], error: null };
-    }
-
-    // If update failed for a non-schema reason, stop.
-    if (upd.error && !missingColRe.test(String(upd.error.message || ""))) {
-      return upd;
-    }
-
-    // Otherwise INSERT.
-    const insPayload = { ...payload };
-    return runWithAutoTrim({
-      label,
-      opName: "insert",
-      payload: insPayload,
-      run: async (p) =>
-        supabase
-          .from("payments")
-          .insert([p])
-          .select("*"),
-    }).then((r) => ({
-      data: Array.isArray(r.data) ? r.data[0] : r.data,
-      error: r.error,
-    }));
-  }
-
-  async function upsertWithAutoTrim({ label, onConflict, initialPayload }) {
-    const payload = { ...initialPayload };
-
-    const up = await runWithAutoTrim({
-      label,
-      opName: "upsert",
-      payload,
-      run: async (p) =>
-        supabase
-          .from("payments")
-          .upsert([p], { onConflict })
-          .select("*")
-          .single(),
-    });
-
-    if (!up.error) return up;
-
-    const msg = String(up.error.message || "");
-    if (noConstraintRe.test(msg)) {
-      console.warn(
-        `[payments] payments table has no unique constraint on '${onConflict}' — falling back to update+insert`,
-      );
-      return manualUpsert({ label, key: onConflict, payload });
-    }
-
-    return up;
-  }
-
-  const variants = [
-    {
-      label: "snake_case",
-      onConflict: "order_id",
-      initialPayload: {
-        order_id: row.orderId,
-        buyer_id: row.buyerId,
-        amount: row.amount,
-        currency: row.currency || "LKR",
-        method: row.method,
-        status: row.status,
-        payment_ref: row.paymentRef || null,
-        updated_at: nowIso,
-      },
-    },
-    {
-      label: "camelCase",
-      onConflict: "orderId",
-      initialPayload: {
-        orderId: row.orderId,
-        buyerId: row.buyerId,
-        amount: row.amount,
-        currency: row.currency || "LKR",
-        method: row.method,
-        status: row.status,
-        paymentRef: row.paymentRef || null,
-        updatedAt: nowIso,
-      },
-    },
-  ];
-
-  let lastError;
-  for (const v of variants) {
-    // eslint-disable-next-line no-await-in-loop
-    const r = await upsertWithAutoTrim(v);
-    if (!r.error) return r.data;
-    lastError = r.error;
-  }
-
-  const err = new Error(lastError?.message || "Supabase upsert failed");
-  err.supabase = true;
-  throw err;
+  if (ins.error) throw ins.error;
+  return ins.data;
 }
 
 function normalizeCardNumber(raw) {
@@ -205,6 +94,18 @@ function isValidExpiry(mmYY) {
 function isValidCvv(cvv) {
   const s = String(cvv || "").trim();
   return /^\d{3,4}$/.test(s);
+}
+
+async function markOrderComplete({ orderId, authHeader }) {
+  const r = await axios.patch(
+    `${ORDER_URL}/orders/${encodeURIComponent(orderId)}/complete`,
+    {},
+    {
+      headers: authHeader ? { Authorization: authHeader } : undefined,
+      timeout: 15000,
+    },
+  );
+  return r.data;
 }
 
 // POST /payments/process
@@ -251,23 +152,71 @@ router.post("/process", async (req, res) => {
     return res.status(400).json({ success: false, error: "Invalid order amount" });
   }
 
+  if (order.status && order.status !== "created") {
+    return res.status(409).json({
+      success: false,
+      error: `Cannot pay an order with status "${order.status}"`,
+    });
+  }
+
   // Persist payment status (starts as pending)
   try {
-    await upsertPayment(supabase, {
+    await writePaymentStatus(supabase, {
       orderId,
       buyerId: order.buyer_id,
       amount,
-      currency: "LKR",
-      method,
       status: "pending",
     });
   } catch (e) {
-    return res.status(500).json({ success: false, error: "Failed to write payment status", details: e.message });
+    return res.status(500).json({
+      success: false,
+      error: "Failed to write payment status",
+      details: e.message,
+      supabase: e?.code
+        ? { code: e.code, hint: e.hint || null, details: e.details || null }
+        : null,
+    });
   }
 
   if (method === "cod") {
-    // For COD we just confirm in this simplified flow.
-    return res.json({ success: true, method: "cod", amount, currency: "LKR", status: "pending" });
+    // Treat COD as completed at checkout (per requested UX: order becomes complete and actions disappear).
+    try {
+      await writePaymentStatus(supabase, {
+        orderId,
+        buyerId: order.buyer_id,
+        amount,
+        status: "completed",
+      });
+    } catch (e) {
+      return res.status(500).json({ success: false, error: "Failed to update COD payment", details: e.message });
+    }
+
+    try {
+      await markOrderComplete({ orderId, authHeader });
+    } catch (err) {
+      const status = err.response?.status;
+      const details = err.response?.data || err.message;
+
+      // Payment is already recorded as completed; don't roll it back.
+      // Return success so the frontend can move on, but include the order-update error.
+      return res.json({
+        success: true,
+        method: "cod",
+        amount,
+        //currency: "LKR", 
+        currency: "$",
+        status: "completed",
+        orderUpdate: {
+          success: false,
+          httpStatus: status || 502,
+          error: "Order update failed",
+          details,
+        },
+      });
+    }
+
+    // return res.json({ success: true, method: "cod", amount, currency: "LKR", status: "completed" });
+    return res.json({ success: true, method: "cod", amount, currency: "$", status: "completed" });
   }
 
   // Online payment validation (server-side backstop)
@@ -291,17 +240,47 @@ router.post("/process", async (req, res) => {
   const paymentId = `pay_${Date.now()}`;
 
   try {
-    await upsertPayment(supabase, {
+    await writePaymentStatus(supabase, {
       orderId,
       buyerId: order.buyer_id,
       amount,
-      currency: "LKR",
-      method,
-      status: "complete",
-      paymentRef: paymentId,
+      status: "completed",
     });
   } catch (e) {
-    return res.status(500).json({ success: false, error: "Payment record update failed", details: e.message });
+    return res.status(500).json({
+      success: false,
+      error: "Payment record update failed",
+      details: e.message,
+      supabase: e?.code
+        ? { code: e.code, hint: e.hint || null, details: e.details || null }
+        : null,
+    });
+  }
+
+  // Mark the order as complete (required for the UX).
+  // If this fails, keep payment status as completed (the real fix is adjusting the
+  // orders status CHECK constraint in Supabase).
+  try {
+    await markOrderComplete({ orderId, authHeader });
+  } catch (err) {
+    const status = err.response?.status;
+    const details = err.response?.data || err.message;
+
+    return res.json({
+      success: true,
+      method: "online",
+      amount,
+      //currency: "LKR", 
+      currency: "$",
+      status: "completed",
+      paymentId,
+      orderUpdate: {
+        success: false,
+        httpStatus: status || 502,
+        error: "Order update failed",
+        details,
+      },
+    });
   }
 
   // Send payment success email (best-effort)
@@ -311,13 +290,14 @@ router.post("/process", async (req, res) => {
       await sendMail({
         to: me.email,
         subject: `✅ Payment Successful — Order #${orderId}`,
-        text: `Your payment for order #${orderId} was successful. Amount: LKR ${amount.toLocaleString()}. Payment Ref: ${paymentId}`,
+        // text: `Your payment for order #${orderId} was successful. Amount: LKR ${amount.toLocaleString()}. Payment Ref: ${paymentId}`,
+        text: `Your payment for order #${orderId} was successful. Amount: $ ${amount.toLocaleString()}. Payment Ref: ${paymentId}`,
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:auto">
             <h2>🐾 Exotic Pet Marketplace</h2>
             <h3 style="color:#27ae60">✅ Payment Successful</h3>
             <p>Order ID: <strong>${orderId}</strong></p>
-            <p>Amount: <strong>LKR ${amount.toLocaleString()}</strong></p>
+            <p>Amount: <strong>$ ${amount.toLocaleString()}</strong></p>
             <p>Payment Reference: <strong>${paymentId}</strong></p>
             <p>Thank you for your purchase.</p>
           </div>
@@ -332,8 +312,9 @@ router.post("/process", async (req, res) => {
     success: true,
     method: "online",
     amount,
-    currency: "LKR",
-    status: "complete",
+    //currency: "LKR", 
+    currency: "$",
+    status: "completed",
     paymentId,
   });
 });
@@ -357,31 +338,23 @@ router.post("/status/bulk", async (req, res) => {
   }
 
   const cleanIds = orderIds.filter(Boolean);
-  // Prefer the secure filter-by-buyer query.
-  let data;
-  let error;
-  ({ data, error } = await supabase
+  const { data, error } = await supabase
     .from("payments")
-    .select("order_id,status")
-    .eq("buyer_id", me.id)
-    .in("order_id", cleanIds));
+    .select("id,orderId,status")
+    .eq("buyerId", me.id)
+    .in("orderId", cleanIds)
+    .order("id", { ascending: false });
 
   if (error) {
-    const msg = String(error.message || "");
-    if (/Could not find the 'buyer_id' column of 'payments'/i.test(msg)) {
-      // Without buyer_id we cannot safely scope results to the caller.
-      return res.status(501).json({
-        error: "Payments table schema mismatch",
-        details:
-          "The Supabase 'payments' table is missing 'buyer_id', so status lookup is disabled for safety. Add the column (uuid) or recreate the table per payment-service README.",
-      });
-    }
-    return res.status(500).json({ error: "DB error", details: msg });
+    return res.status(500).json({ error: "DB error", details: String(error.message || error) });
   }
 
+  // Because multiple payment rows can exist per orderId, keep the latest one only.
   const byOrderId = {};
   for (const row of data || []) {
-    byOrderId[row.order_id] = row.status;
+    if (row?.orderId == null) continue;
+    if (byOrderId[row.orderId] != null) continue;
+    byOrderId[row.orderId] = row.status;
   }
 
   return res.json({ statuses: byOrderId });
