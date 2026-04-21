@@ -33,7 +33,7 @@ app.use(
 
 //  Health
 app.get("/health", (req, res) => {
-  res.json({ service: "order-service", status: "ok" });
+  res.json({ service: "order-service", status: "CI/CD" });
 });
 
 //  Routes
